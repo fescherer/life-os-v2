@@ -25,13 +25,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
+    <html 
       data-theme="silk"
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <div className="d-flex flex-1 gap-2">
+      <body className="flex min-h-full flex-col">
+        <div className="flex-1 gap-2">
           <Menu />
           <main>{children}</main>
         </div>
