@@ -20,7 +20,12 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
+    "lint-staged": "^16.4.0",
+    "simple-git-hooks": "^2.13.1",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+    "simple-git-hooks": {
+    "pre-commit": "npx lint-staged"
   }
 }
