@@ -13,6 +13,7 @@ const eslintConfig = defineConfig([
     rules: {
       'indent': ['error', 2],
       '@stylistic/indent': ['error', 2],
+      "react/self-closing-comp": "error"
     }
   },
   globalIgnores([
