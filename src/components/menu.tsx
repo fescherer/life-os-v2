@@ -6,7 +6,7 @@ export function Menu() {
 
     <div className="bg-base-200 border-base-300 my-2 ml-2 flex flex-col gap-4 rounded border p-2 shadow">
   
-      <Link href="/organization" className="btn drawer-button p-2"><Settings /></Link>
+      <Link href="/" className="btn drawer-button p-2"><Settings /></Link>
       <div className="drawer flex flex-1 flex-col justify-between">
         <input id="menu-drawer" type="checkbox" className="drawer-toggle" />
         <div className="drawer-content">

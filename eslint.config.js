@@ -53,7 +53,7 @@ export default defineConfig([
       "@stylistic": stylistic,
     },
     rules: {
-      indent: ["error", 2],
+      "indent": "off",
       "@stylistic/indent": ["error", 2],
       "react/self-closing-comp": "error",
       "react/react-in-jsx-scope": "off",
