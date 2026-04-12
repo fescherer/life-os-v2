@@ -28,12 +28,12 @@ export default function RootLayout({
     <html 
       data-theme="silk"
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} bg-base-100 h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <div className="flex-1 gap-2">
+        <div className="flex flex-1">
           <Menu />
-          <main>{children}</main>
+          <main className="bg-base-200 border-base-300 mx-4 my-2 flex-1 rounded border p-4 shadow">{children}</main>
         </div>
 
         <Footer />

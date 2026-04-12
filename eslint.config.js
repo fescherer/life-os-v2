@@ -18,6 +18,9 @@ export default defineConfig([
       tailwindcss: {
         whitelist: [
           "^bg-(base|primary|secondary|accent|neutral|info|success|warning|error)(-.*)?$",
+          "border-(base|primary|secondary|accent|neutral|info|success|warning|error)(-.*)?$",
+          "text-(base|primary|secondary|accent|neutral|info|success|warning|error)(-.*)?$",
+          "^tooltip(-.*)?$",
           "^btn(-.*)?$",
           "^card(-.*)?$",
           "^menu(-.*)?$",
