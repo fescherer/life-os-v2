@@ -1,8 +1,5 @@
-export default function Home() {
+import { redirect } from 'next/navigation'
 
-  return (
-    <div>
-      dasdasdasdasd
-    </div>
-  );
+export default function RootPage() {
+  redirect('/life-os')
 }
