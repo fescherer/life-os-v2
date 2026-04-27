@@ -3,6 +3,18 @@
   themes: silk;
 }
 
+[data-theme="silk"] {
+  --color-primary: oklch(27% 0.041 260.031);
+  --color-primary-content: oklch(92% 0.013 255.508);
+
+  --color-secondary: oklch(26% 0.007 34.298);
+  --color-secondary-content: oklch(92% 0.003 48.717);
+
+  --color-accent: oklch(27% 0.033 256.848);
+  --color-accent-content: oklch(96% 0.003 264.542);
+}
+
 body {
   font-family: Arial, Helvetica, sans-serif;
 }
+

@@ -1,7 +1,8 @@
 {
-    "editor.codeActionsOnSave": {
-        "source.fixAll.eslint": "always"
-    },
-    "prettier.enable": false,
-    "editor.formatOnSave": false,
+  "editor.wordWrap": "on",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "always"
+  },
+  "prettier.enable": false,
+  "editor.formatOnSave": false,
 }
