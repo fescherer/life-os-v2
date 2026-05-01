@@ -1,60 +1,67 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import type {
+  FinanceAssetEntryTableRow,
+  FinanceEditRecord,
+  FinanceEntryTableRow,
+} from '@/queries/finances/entries';
 import FinanceDataTable, { type Column } from './table';
 
-type FinanceTab = 'income' | 'expenses';
+type FinanceTab = 'entry' | 'entry-asset';
 
-type IncomeRow = {
-  id: number;
-  source: string;
-  category: string;
-  amount: string;
-  date: string;
-};
-
-type ExpenseRow = {
-  id: number;
-  vendor: string;
-  category: string;
-  amount: string;
-  status: string;
-};
-
-const incomeData: IncomeRow[] = [
-  { id: 1, source: 'Salary', category: 'Work', amount: '$4,500', date: '2026-04-01' },
-  { id: 2, source: 'Freelance', category: 'Client', amount: '$850', date: '2026-04-08' },
-];
-
-const vendors = ['Amazon', 'Netflix', 'Google', 'Apple', 'Microsoft', 'Uber', 'Spotify'];
-const categories = ['Office', 'Subscription', 'Travel', 'Food', 'Software'];
-const statuses = ['Paid', 'Pending', 'Failed'];
-
-const expenseData: ExpenseRow[] = Array.from({ length: 200 }, (_, i) => ({
-  id: i + 1,
-  vendor: vendors[Math.floor(Math.random() * vendors.length)],
-  category: categories[Math.floor(Math.random() * categories.length)],
-  amount: `$${(Math.random() * 500).toFixed(2)}`,
-  status: statuses[Math.floor(Math.random() * statuses.length)],
-}));
-
-const incomeColumns: Column<IncomeRow>[] = [
-  { key: 'source', label: 'Source' },
-  { key: 'category', label: 'Category' },
-  { key: 'amount', label: 'Amount' },
+const entryColumns: Column<FinanceEntryTableRow>[] = [
   { key: 'date', label: 'Date' },
-];
-
-const expenseColumns: Column<ExpenseRow>[] = [
-  { key: 'vendor', label: 'Vendor' },
+  { key: 'description', label: 'Description' },
+  { key: 'bank', label: 'Bank' },
+  { key: 'type', label: 'Type' },
   { key: 'category', label: 'Category' },
   { key: 'amount', label: 'Amount' },
-  { key: 'status', label: 'Status' },
 ];
 
-export default function TablePage() {
-  const [tab, setTab] = useState<FinanceTab>('income');
+const entryAssetColumns: Column<FinanceAssetEntryTableRow>[] = [
+  { key: 'date', label: 'Date' },
+  { key: 'description', label: 'Description' },
+  { key: 'bank', label: 'Bank' },
+  { key: 'type', label: 'Type' },
+  { key: 'asset', label: 'Asset' },
+  { key: 'amount', label: 'Amount' },
+];
+
+type TablePageProps = {
+  initialAssetEntryData: FinanceAssetEntryTableRow[];
+  initialEntryData: FinanceEntryTableRow[];
+  onEditRecord: (record: FinanceEditRecord) => void;
+};
+
+export default function TablePage({
+  initialAssetEntryData,
+  initialEntryData,
+  onEditRecord,
+}: TablePageProps) {
+  const [tab, setTab] = useState<FinanceTab>('entry');
   const [search, setSearch] = useState('');
+
+  const { data, isLoading } = useQuery<
+    FinanceEntryTableRow[] | FinanceAssetEntryTableRow[]
+  >({
+    queryKey: ['finances', tab],
+    queryFn: async () => {
+      const params =
+        tab === 'entry' ? '' : '?table=fin_assets_entries';
+      const res = await fetch(`/api/finances${params}`);
+
+      if (!res.ok) {
+        throw new Error(`Failed to load ${tab}`);
+      }
+
+      return res.json();
+    },
+    initialData: tab === 'entry' ? initialEntryData : initialAssetEntryData,
+  });
+
+  if (isLoading) return <div>Loading...</div>;
 
   return (
     <main className="card border-base-300 bg-base-100 flex flex-1 flex-col p-3 shadow-sm sm:p-4">
@@ -63,27 +70,29 @@ export default function TablePage() {
           <button
             role="tab"
             className={`tab border-base-300 h-14 min-h-14 px-4 ${
-              tab === 'income' ? 'tab-active bg-base-200! text-base-content!' : ''
+              tab === 'entry' ? 'tab-active bg-base-200! text-base-content!' : ''
             }`}
             onClick={() => {
-              setTab('income');
+              setTab('entry');
               setSearch('');
             }}
           >
-            Income
+            Entry
           </button>
 
           <button
             role="tab"
             className={`tab border-base-300 h-14 min-h-14 px-4 ${
-              tab === 'expenses' ? 'tab-active bg-base-200! text-base-content!' : ''
+              tab === 'entry-asset'
+                ? 'tab-active bg-base-200! text-base-content!'
+                : ''
             }`}
             onClick={() => {
-              setTab('expenses');
+              setTab('entry-asset');
               setSearch('');
             }}
           >
-            Expenses
+            Entry Asset
           </button>
         </div>
 
@@ -99,16 +108,40 @@ export default function TablePage() {
       </div>
 
       <div className="border-base-300 bg-base-100 -mt-px flex flex-1 overflow-hidden rounded-tr-2xl rounded-b-2xl border">
-        {tab === 'income' ? (
-          <FinanceDataTable<IncomeRow>
-            columns={incomeColumns}
-            data={incomeData}
+        {tab === 'entry' ? (
+          <FinanceDataTable<FinanceEntryTableRow>
+            columns={entryColumns}
+            data={data ?? []}
+            onEditRow={(row) =>
+              onEditRecord({
+                bankId: row.bankId,
+                categoryId: row.categoryId,
+                date: row.rawDate,
+                description: row.description,
+                id: row.id,
+                table: "fin_entries",
+                typeId: row.typeId,
+                value: row.rawValue,
+              })
+            }
             search={search}
           />
         ) : (
-          <FinanceDataTable<ExpenseRow>
-            columns={expenseColumns}
-            data={expenseData}
+          <FinanceDataTable<FinanceAssetEntryTableRow>
+            columns={entryAssetColumns}
+            data={data ?? []}
+            onEditRow={(row) =>
+              onEditRecord({
+                assetId: row.assetId,
+                bankId: row.bankId,
+                date: row.rawDate,
+                description: row.description,
+                id: row.id,
+                table: "fin_assets_entries",
+                typeId: row.typeId,
+                value: row.rawValue,
+              })
+            }
             search={search}
           />
         )}

@@ -1,3 +1,4 @@
+import { ModalStackDemo } from '@/components/modal-stack-demo'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
@@ -20,10 +21,20 @@ export default async function LifeOsHomePage() {
     'there'
 
   return (
-    <main className="flex min-h-[70vh] items-center justify-center">
-      <h1 className="text-base-content text-3xl font-semibold">
-        Good afternoon, {userName}
-      </h1>
+    <main className="flex min-h-[70vh] justify-center px-4 py-10">
+      <div className="flex w-full max-w-4xl flex-col gap-8">
+        <div className="space-y-2">
+          <h1 className="text-base-content text-3xl font-semibold">
+            Good afternoon, {userName}
+          </h1>
+          <p className="text-base-content/70 text-sm">
+            This page now includes a stacked modal example so you can validate
+            nested overlays in the real app shell.
+          </p>
+        </div>
+
+        <ModalStackDemo />
+      </div>
     </main>
   )
 }

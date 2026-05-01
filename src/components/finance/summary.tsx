@@ -1,8 +1,30 @@
 'use client'
 import { useState } from 'react';
+import { Modal } from '../modal';
 
 export function SummaryFinance() {
   const [selected, setSelected] = useState("mes");
+
+  const menu_items = [
+    {
+      name: 'Incomes',
+      value: <strong>R$ 12.000,00</strong>,
+      content: <p>Graph showing incomes</p>,
+      fn: () => {}
+    },
+    {
+      name: 'Expenses',
+      value: <strong>R$ 8.500,00</strong>,
+      content: <p>Graph showing expenses</p>,
+      fn: () => {}
+    },
+    {
+      name: 'Total',
+      value: <strong>R$ 3.500,00</strong>,
+      content: <p>Graph showing total</p>,
+      fn: () => {}
+    }
+  ]
 
   return (
     <div className='card bg-base-100 border-base-300 shadow-sm'>
@@ -33,23 +55,20 @@ export function SummaryFinance() {
             </button>
           </div>
         </div>
-        <li><label htmlFor="my-modal"  className='flex justify-between gap-4'><span>INCOME</span><strong>R$ 12.000,00</strong></label></li>
-        <li><label htmlFor="my-modal" className='flex justify-between gap-4'><span>EXPENSES</span><strong>R$ 8.500,00</strong></label></li>
-        <li><label htmlFor="my-modal" className='flex justify-between gap-4'><span>TOTAL</span><strong>R$ 3.500,00</strong></label></li>
 
-        <input type="checkbox" id="my-modal" className="modal-toggle" />
-        <div className="modal">
-          <label htmlFor="my-modal" className="modal-backdrop" />
-          <div className="modal-box">
-            <h3 className="text-lg font-bold">Hello!</h3>
-            <p className="py-4">This is a simple DaisyUI modal.</p>
-    
-            <div className="modal-action">
-              <label htmlFor="my-modal" className="btn">Close</label>
-            </div>
-          </div>
-        </div>
-
+        {
+          menu_items.map((menu_item) => (
+            <li key={menu_item.name}>
+              <Modal 
+                triggerContent={<div className='flex justify-between gap-4'>
+                  <span>{menu_item.name.toUpperCase()}</span>{menu_item.value}
+                </div>}
+                modalTitle={<div className="flex items-center gap-2">{menu_item.name}</div>}
+              >
+                <p className="py-4">Adicionar lançamento</p>
+              </Modal></li>
+          ))
+        }
       </div>
     </div>
   )

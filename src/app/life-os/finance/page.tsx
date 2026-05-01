@@ -1,16 +1,23 @@
-import FinanceDataTable from '@/components/finance/data-table'
-import { FilterFinance } from '@/components/finance/filter'
-import { SummaryFinance } from '@/components/finance/summary'
+import { FinancePageClient } from '@/components/finance/page-client'
+import { getFinanceAssets } from '@/queries/finances/assets'
+import {
+  getFinanceAssetEntryTableRows,
+  getFinanceEntryTableRows,
+} from '@/queries/finances/entries'
+import { getFinanceSelects } from '@/queries/finances/selects'
 
-export default function FinancePage() {
+export default async function FinancePage() {
+  const financeEntries = await getFinanceEntryTableRows()
+  const financeAssetEntries = await getFinanceAssetEntryTableRows()
+  const financeAssets = await getFinanceAssets()
+  const financeSelects = await getFinanceSelects()
+
   return (
-    <div className="flex h-full w-full flex-1 flex-col gap-4">
-      <FilterFinance />
-      
-      <div className='flex flex-1 gap-4'> 
-        <SummaryFinance />
-        <FinanceDataTable />
-      </div>
-    </div>
+    <FinancePageClient
+      initialAssetEntryData={financeAssetEntries}
+      initialAssets={financeAssets}
+      initialEntryData={financeEntries}
+      initialSelects={financeSelects}
+    />
   )
 }

@@ -13,7 +13,9 @@ export function FinanceConfig() {
         triggerContent={<div className='btn btn-sm'>{title}</div>}
         modalTitle={<div className="flex items-center gap-2">{title}</div>}
       >
-        <p className="py-4">Configurações</p>
+        <div className="py-4">
+          sadsda
+        </div>
       </Modal>
     </>
   )

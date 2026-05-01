@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import { Pencil } from "lucide-react";
+import { useMemo, useState } from "react";
 
-export type RowData = Record<string, string | number>;
+export type RowData = Record<string, string | number | null | undefined>;
 
 export type Column<T extends RowData> = {
   key: keyof T;
@@ -9,13 +10,15 @@ export type Column<T extends RowData> = {
 
 type FinanceDataTableProps<T extends RowData> = {
   columns: Column<T>[];
-  data: T[];
+  data: RowData[];
+  onEditRow?: (row: T) => void;
   search: string;
 };
 
 export default function FinanceDataTable<T extends RowData>({
   columns,
   data,
+  onEditRow,
   search,
 }: FinanceDataTableProps<T>) {
   const [page, setPage] = useState(1);
@@ -69,6 +72,7 @@ export default function FinanceDataTable<T extends RowData>({
                   {column.label}
                 </th>
               ))}
+              {onEditRow && <th className="font-semibold text-right">Actions</th>}
             </tr>
           </thead>
 
@@ -77,16 +81,28 @@ export default function FinanceDataTable<T extends RowData>({
               <tr key={String(row.id ?? index)} >
                 {columns.map((column) => (
                   <td key={String(column.key)} className="whitespace-nowrap">
-                    {String(row[column.key] ?? "")}
+                    <span>{String(row[column.key as string] ?? "")}</span>
                   </td>
                 ))}
+                {onEditRow && (
+                  <td className="text-right">
+                    <button
+                      type="button"
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => onEditRow(row as T)}
+                    >
+                      <Pencil size={14} />
+                      Edit
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
 
             {paginated.length === 0 && (
               <tr>
                 <td
-                  colSpan={columns.length}
+                  colSpan={columns.length + (onEditRow ? 1 : 0)}
                   className="text-base-content/60 py-12 text-center"
                 >
                   No results found.
