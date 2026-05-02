@@ -4,12 +4,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import type {
   FinanceAssetEntryTableRow,
+  FinanceChangedRecord,
   FinanceEditRecord,
   FinanceEntryTableRow,
 } from '@/queries/finances/entries';
 import FinanceDataTable, { type Column } from './table';
 
-type FinanceTab = 'entry' | 'entry-asset';
+export type FinanceTab = 'entry' | 'entry-asset';
 
 const entryColumns: Column<FinanceEntryTableRow>[] = [
   { key: 'date', label: 'Date' },
@@ -30,17 +31,24 @@ const entryAssetColumns: Column<FinanceAssetEntryTableRow>[] = [
 ];
 
 type TablePageProps = {
+  highlightedRecord: FinanceChangedRecord | null;
   initialAssetEntryData: FinanceAssetEntryTableRow[];
   initialEntryData: FinanceEntryTableRow[];
   onEditRecord: (record: FinanceEditRecord) => void;
+  onHighlightComplete: () => void;
+  onTabChange: (tab: FinanceTab) => void;
+  tab: FinanceTab;
 };
 
 export default function TablePage({
+  highlightedRecord,
   initialAssetEntryData,
   initialEntryData,
   onEditRecord,
+  onHighlightComplete,
+  onTabChange,
+  tab,
 }: TablePageProps) {
-  const [tab, setTab] = useState<FinanceTab>('entry');
   const [search, setSearch] = useState('');
 
   const { data, isLoading } = useQuery<
@@ -73,7 +81,7 @@ export default function TablePage({
               tab === 'entry' ? 'tab-active bg-base-200! text-base-content!' : ''
             }`}
             onClick={() => {
-              setTab('entry');
+              onTabChange('entry');
               setSearch('');
             }}
           >
@@ -88,7 +96,7 @@ export default function TablePage({
                 : ''
             }`}
             onClick={() => {
-              setTab('entry-asset');
+              onTabChange('entry-asset');
               setSearch('');
             }}
           >
@@ -112,6 +120,12 @@ export default function TablePage({
           <FinanceDataTable<FinanceEntryTableRow>
             columns={entryColumns}
             data={data ?? []}
+            highlightedRowId={
+              highlightedRecord?.table === 'fin_entries'
+                ? highlightedRecord.id
+                : null
+            }
+            onHighlightComplete={onHighlightComplete}
             onEditRow={(row) =>
               onEditRecord({
                 bankId: row.bankId,
@@ -130,6 +144,12 @@ export default function TablePage({
           <FinanceDataTable<FinanceAssetEntryTableRow>
             columns={entryAssetColumns}
             data={data ?? []}
+            highlightedRowId={
+              highlightedRecord?.table === 'fin_assets_entries'
+                ? highlightedRecord.id
+                : null
+            }
+            onHighlightComplete={onHighlightComplete}
             onEditRow={(row) =>
               onEditRecord({
                 assetId: row.assetId,

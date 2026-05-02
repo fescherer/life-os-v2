@@ -49,6 +49,7 @@ export default defineConfig([
           "^rounded(-.*)?$",
           "^label(-.*)?$",
           "^form-control(-.*)?$",
+          "^animate(-.*)?$",
         ],
       },
     },

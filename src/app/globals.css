@@ -18,3 +18,18 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+
+@keyframes row-highlight {
+  0%, 70% {
+    background-color: var(--primary, var(--color-primary));
+    color: var(--primary-content, var(--color-primary-content));
+  }
+  100% {
+    background-color: transparent;
+    color: inherit;
+  }
+}
+
+@theme {
+  --animate-row-highlight: row-highlight 1s ease-out forwards;
+}

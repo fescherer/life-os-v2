@@ -1,6 +1,7 @@
 "use client";
 
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { FinanceDatePicker } from "@/components/finance/finance-date-picker";
 import { Field } from "@/components/field";
 import { Modal } from "@/components/modal";
 import {
@@ -13,6 +14,7 @@ import {
 } from "@/queries/finances/assets";
 import type {
   FinanceAssetEntry,
+  FinanceChangedRecord,
   FinanceEditRecord,
   FinanceEntry,
 } from "@/queries/finances/entries";
@@ -27,7 +29,7 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DiamondPlus, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { createPortal } from "react-dom";
@@ -68,6 +70,7 @@ type Props = {
   initialAssets: FinanceAssetOption[];
   initialSelects: FinanceSelectsData;
   onEditingChange: (record: FinanceEditRecord | null) => void;
+  onRecordSaved: (record: FinanceChangedRecord) => void;
 };
 
 type DeleteDialogState =
@@ -91,13 +94,13 @@ type DeleteDialogState =
 
 type SuccessDialogState =
   | {
-      isOpen: true;
-      launchType: FinanceFormData["launchType"];
-    }
+    isOpen: true;
+    launchType: FinanceFormData["launchType"];
+  }
   | {
-      isOpen: false;
-      launchType: FinanceFormData["launchType"] | null;
-    };
+    isOpen: false;
+    launchType: FinanceFormData["launchType"] | null;
+  };
 
 async function fetchFinanceSelects(): Promise<FinanceSelectsData> {
   const response = await fetch("/api/finances/selects");
@@ -257,23 +260,23 @@ async function deleteFinanceAssetRequest(input: {
 
 async function createFinanceRecordRequest(input:
   | {
-      bankId: number;
-      categoryId: number;
-      date: string;
-      description: string;
-      table: "fin_entries";
-      typeId: number;
-      value: number;
-    }
+    bankId: number;
+    categoryId: number;
+    date: string;
+    description: string;
+    table: "fin_entries";
+    typeId: number;
+    value: number;
+  }
   | {
-      assetId: number;
-      bankId: number;
-      date: string;
-      description: string;
-      table: "fin_assets_entries";
-      typeId: number;
-      value: number;
-    }
+    assetId: number;
+    bankId: number;
+    date: string;
+    description: string;
+    table: "fin_assets_entries";
+    typeId: number;
+    value: number;
+  }
 ): Promise<FinanceEntry | FinanceAssetEntry> {
   const response = await fetch("/api/finances", {
     method: "POST",
@@ -294,25 +297,25 @@ async function createFinanceRecordRequest(input:
 
 async function updateFinanceRecordRequest(input:
   | {
-      bankId: number;
-      categoryId: number;
-      date: string;
-      description: string;
-      id: number;
-      table: "fin_entries";
-      typeId: number;
-      value: number;
-    }
+    bankId: number;
+    categoryId: number;
+    date: string;
+    description: string;
+    id: number;
+    table: "fin_entries";
+    typeId: number;
+    value: number;
+  }
   | {
-      assetId: number;
-      bankId: number;
-      date: string;
-      description: string;
-      id: number;
-      table: "fin_assets_entries";
-      typeId: number;
-      value: number;
-    }
+    assetId: number;
+    bankId: number;
+    date: string;
+    description: string;
+    id: number;
+    table: "fin_assets_entries";
+    typeId: number;
+    value: number;
+  }
 ): Promise<FinanceEntry | FinanceAssetEntry> {
   const response = await fetch("/api/finances", {
     method: "PATCH",
@@ -336,6 +339,7 @@ export function FinanceAddItem({
   initialAssets,
   initialSelects,
   onEditingChange,
+  onRecordSaved,
 }: Props) {
   const queryClient = useQueryClient();
   const [isAddItemOpen, setIsAddItemOpen] = useState(false);
@@ -480,6 +484,13 @@ export function FinanceAddItem({
     control,
     name: "launchType",
   });
+  const isEditing = Boolean(editingRecord);
+  const isEditingRef = useRef(isEditing);
+
+  isEditingRef.current = isEditing;
+
+  const editingLaunchTypeLabel =
+    editingRecord?.table === "fin_assets_entries" ? "Asset Entry" : "Entry";
 
   const typeSelectName =
     launchType === "fin_entries"
@@ -499,6 +510,10 @@ export function FinanceAddItem({
     updateFinanceRecordMutation.isPending;
 
   useEffect(() => {
+    if (isEditingRef.current) {
+      return;
+    }
+
     setValue("type", "");
   }, [launchType, setValue]);
 
@@ -671,6 +686,16 @@ export function FinanceAddItem({
 
   async function onSubmit(data: FinanceFormData) {
     try {
+      if (
+        editingRecord &&
+        data.launchType !==
+          (editingRecord.table === "fin_entries"
+            ? "fin_entries"
+            : "fin_asset_entries")
+      ) {
+        throw new Error("Nao e possivel alterar o tipo de lancamento ao editar.");
+      }
+
       const bankOption = selectData.banks.find((option) => option.value === data.bank);
       const typeOption = typeOptions.find((option) => option.value === data.type);
 
@@ -684,6 +709,7 @@ export function FinanceAddItem({
 
       const value = Math.round(data.amount * 100);
       const description = data.description?.trim() ?? "";
+      let savedRecord: FinanceChangedRecord | null = null;
 
       if (data.launchType === "fin_entries") {
         const categoryOption = selectData.entryCategories.find(
@@ -695,7 +721,7 @@ export function FinanceAddItem({
         }
 
         if (editingRecord?.table === "fin_entries") {
-          await updateFinanceRecordMutation.mutateAsync({
+          const updatedRecord = await updateFinanceRecordMutation.mutateAsync({
             bankId: bankOption.id,
             categoryId: categoryOption.id,
             date: data.date,
@@ -705,8 +731,12 @@ export function FinanceAddItem({
             typeId: typeOption.id,
             value,
           });
+          savedRecord = {
+            id: updatedRecord.id,
+            table: "fin_entries",
+          };
         } else {
-          await createFinanceRecordMutation.mutateAsync({
+          const createdRecord = await createFinanceRecordMutation.mutateAsync({
             bankId: bankOption.id,
             categoryId: categoryOption.id,
             date: data.date,
@@ -715,6 +745,10 @@ export function FinanceAddItem({
             typeId: typeOption.id,
             value,
           });
+          savedRecord = {
+            id: createdRecord.id,
+            table: "fin_entries",
+          };
         }
       } else {
         const assetOption = assetData.find((asset) => asset.value === data.asset);
@@ -724,7 +758,7 @@ export function FinanceAddItem({
         }
 
         if (editingRecord?.table === "fin_assets_entries") {
-          await updateFinanceRecordMutation.mutateAsync({
+          const updatedRecord = await updateFinanceRecordMutation.mutateAsync({
             assetId: assetOption.id,
             bankId: bankOption.id,
             date: data.date,
@@ -734,8 +768,12 @@ export function FinanceAddItem({
             typeId: typeOption.id,
             value,
           });
+          savedRecord = {
+            id: updatedRecord.id,
+            table: "fin_assets_entries",
+          };
         } else {
-          await createFinanceRecordMutation.mutateAsync({
+          const createdRecord = await createFinanceRecordMutation.mutateAsync({
             assetId: assetOption.id,
             bankId: bankOption.id,
             date: data.date,
@@ -744,7 +782,15 @@ export function FinanceAddItem({
             typeId: typeOption.id,
             value,
           });
+          savedRecord = {
+            id: createdRecord.id,
+            table: "fin_assets_entries",
+          };
         }
+      }
+
+      if (savedRecord) {
+        onRecordSaved(savedRecord);
       }
 
       reset({
@@ -797,182 +843,198 @@ export function FinanceAddItem({
           </div>
         }
       >
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 py-4">
-        <fieldset disabled={isAppBusy} className="space-y-5">
-        <Field label="Tipo de lancamento">
-          <select
-            className="select select-bordered w-full"
-            {...register("launchType")}
-          >
-            <option value="fin_entries">Entry</option>
-            <option value="fin_asset_entries">Asset Entry</option>
-          </select>
-        </Field>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 py-4">
+          <fieldset disabled={isAppBusy} className="space-y-5">
+            <Field label="Tipo de lancamento">
+              {isEditing ? (
+                <>
+                  <input type="hidden" {...register("launchType")} />
+                  <input
+                    className="input input-bordered w-full"
+                    readOnly
+                    value={editingLaunchTypeLabel}
+                  />
+                </>
+              ) : (
+                <select
+                  className="select select-bordered w-full"
+                  {...register("launchType")}
+                >
+                  <option value="fin_entries">Entry</option>
+                  <option value="fin_asset_entries">Asset Entry</option>
+                </select>
+              )}
+            </Field>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Data" error={errors.date?.message}>
-            <input
-              type="date"
-              className="input input-bordered w-full"
-              {...register("date")}
-            />
-          </Field>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Field label="Data" error={errors.date?.message}>
+                <Controller
+                  control={control}
+                  name="date"
+                  render={({ field }) => (
+                    <FinanceDatePicker
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+              </Field>
 
-          <Field label="Valor" error={errors.amount?.message}>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              className="input input-bordered w-full"
-              placeholder="Ex: 129.90"
-              {...register("amount", {
-                valueAsNumber: true,
-              })}
-            />
-          </Field>
-        </div>
+              <Field label="Valor" error={errors.amount?.message}>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  className="input input-bordered w-full"
+                  placeholder="Ex: 129.90"
+                  {...register("amount", {
+                    valueAsNumber: true,
+                  })}
+                />
+              </Field>
+            </div>
 
-        <Field label="Descricao">
-          <textarea
-            className="textarea textarea-bordered min-h-16 w-full"
-            placeholder="Descreva o lancamento..."
-            {...register("description")}
-          />
-        </Field>
+            <Field label="Descricao">
+              <textarea
+                className="textarea textarea-bordered min-h-16 w-full"
+                placeholder="Descreva o lancamento..."
+                {...register("description")}
+              />
+            </Field>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <Controller
-            control={control}
-            name="bank"
-            render={({ field }) => (
-              <CreateOptionSelect
-                label="Banco"
-                value={field.value}
-                options={selectData.banks}
-                onChange={field.onChange}
-                onCreate={handleCreateSelectOption(FINANCE_SELECT_NAMES.banks)}
-                onDeleteOption={handleDeleteSelectOption(
-                  FINANCE_SELECT_NAMES.banks
+            <div className="grid gap-4 md:grid-cols-2">
+              <Controller
+                control={control}
+                name="bank"
+                render={({ field }) => (
+                  <CreateOptionSelect
+                    label="Banco"
+                    value={field.value}
+                    options={selectData.banks}
+                    onChange={field.onChange}
+                    onCreate={handleCreateSelectOption(FINANCE_SELECT_NAMES.banks)}
+                    onDeleteOption={handleDeleteSelectOption(
+                      FINANCE_SELECT_NAMES.banks
+                    )}
+                    placeholder="Selecionar banco"
+                  />
                 )}
-                placeholder="Selecionar banco"
+              />
+
+              <Controller
+                control={control}
+                name="type"
+                render={({ field }) => (
+                  <CreateOptionSelect
+                    label="Tipo"
+                    value={field.value}
+                    options={typeOptions}
+                    onChange={field.onChange}
+                    onCreate={handleCreateSelectOption(typeSelectName)}
+                    onDeleteOption={handleDeleteSelectOption(typeSelectName)}
+                    placeholder="Selecionar tipo"
+                  />
+                )}
+              />
+            </div>
+
+            {launchType === "fin_entries" ? (
+              <FinanceEntryFields
+                control={control}
+                categoryOptions={selectData.entryCategories}
+                onCreateCategory={handleCreateSelectOption(
+                  FINANCE_SELECT_NAMES.entryCategories
+                )}
+                onDeleteCategory={handleDeleteSelectOption(
+                  FINANCE_SELECT_NAMES.entryCategories
+                )}
+              />
+            ) : (
+              <FinanceAssetFields
+                control={control}
+                assetOptions={assetData}
+                assetTypeOptions={selectData.assetTypes}
+                onCreateAsset={handleCreateAsset}
+                onCreateAssetType={handleCreateSelectOption(
+                  FINANCE_SELECT_NAMES.assetTypes
+                )}
+                onDeleteAsset={handleDeleteAsset()}
+                onDeleteAssetType={handleDeleteSelectOption(
+                  FINANCE_SELECT_NAMES.assetTypes
+                )}
               />
             )}
-          />
 
-          <Controller
-            control={control}
-            name="type"
-            render={({ field }) => (
-              <CreateOptionSelect
-                label="Tipo"
-                value={field.value}
-                options={typeOptions}
-                onChange={field.onChange}
-                onCreate={handleCreateSelectOption(typeSelectName)}
-                onDeleteOption={handleDeleteSelectOption(typeSelectName)}
-                placeholder="Selecionar tipo"
-              />
-            )}
-          />
-        </div>
+            <div className="modal-action">
+              <button type="submit" className="btn btn-primary" disabled={isAppBusy}>
+                {createFinanceRecordMutation.isPending || updateFinanceRecordMutation.isPending
+                  ? "Salvando..."
+                  : editingRecord
+                    ? "Salvar alteracoes"
+                    : "Salvar lancamento"}
+              </button>
+            </div>
+          </fieldset>
+        </form>
 
-        {launchType === "fin_entries" ? (
-          <FinanceEntryFields
-            control={control}
-            categoryOptions={selectData.entryCategories}
-            onCreateCategory={handleCreateSelectOption(
-              FINANCE_SELECT_NAMES.entryCategories
-            )}
-            onDeleteCategory={handleDeleteSelectOption(
-              FINANCE_SELECT_NAMES.entryCategories
-            )}
-          />
-        ) : (
-          <FinanceAssetFields
-            control={control}
-            assetOptions={assetData}
-            assetTypeOptions={selectData.assetTypes}
-            onCreateAsset={handleCreateAsset}
-            onCreateAssetType={handleCreateSelectOption(
-              FINANCE_SELECT_NAMES.assetTypes
-            )}
-            onDeleteAsset={handleDeleteAsset()}
-            onDeleteAssetType={handleDeleteSelectOption(
-              FINANCE_SELECT_NAMES.assetTypes
-            )}
-          />
-        )}
-
-        <div className="modal-action">
-          <button type="submit" className="btn btn-primary" disabled={isAppBusy}>
-            {createFinanceRecordMutation.isPending || updateFinanceRecordMutation.isPending
-              ? "Salvando..."
-              : editingRecord
-                ? "Salvar alteracoes"
-                : "Salvar lancamento"}
-          </button>
-        </div>
-        </fieldset>
-      </form>
-
-      <ConfirmDialog
-        isOpen={
-          deleteDialogState?.mode === "confirm" ||
+        <ConfirmDialog
+          isOpen={
+            deleteDialogState?.mode === "confirm" ||
           deleteDialogState?.mode === "asset-confirm"
-        }
-        title={
-          deleteDialogState?.mode === "asset-confirm"
-            ? "Excluir ativo"
-            : "Excluir opcao"
-        }
-        confirmLabel="Excluir"
-        confirmVariant="danger"
-        isSubmitting={deleteOptionMutation.isPending || deleteAssetMutation.isPending}
-        onClose={() => setDeleteDialogState(null)}
-        onConfirm={() => void handleConfirmDeleteOption()}
-      >
-        {deleteDialogState?.mode === "confirm" && (
-          <div className="space-y-3">
-            <p>
-              Tem certeza que deseja excluir{" "}
-              <span className="font-semibold">
-                "{deleteDialogState.preview.optionLabel}"
-              </span>
-              ?
-            </p>
-            <p className="text-base-content/70 text-sm">
-              Essa acao remove a opcao do select para novos lancamentos.
-            </p>
-          </div>
-        )}
-        {deleteDialogState?.mode === "asset-confirm" && (
-          <div className="space-y-3">
-            <p>
-              Tem certeza que deseja excluir o ativo{" "}
-              <span className="font-semibold">
-                "{deleteDialogState.preview.optionLabel}"
-              </span>
-              ?
-            </p>
-            <p className="text-base-content/70 text-sm">
-              Essa acao remove o ativo da sua lista para novos lancamentos.
-            </p>
-          </div>
-        )}
-      </ConfirmDialog>
+          }
+          title={
+            deleteDialogState?.mode === "asset-confirm"
+              ? "Excluir ativo"
+              : "Excluir opcao"
+          }
+          confirmLabel="Excluir"
+          confirmVariant="danger"
+          isSubmitting={deleteOptionMutation.isPending || deleteAssetMutation.isPending}
+          onClose={() => setDeleteDialogState(null)}
+          onConfirm={() => void handleConfirmDeleteOption()}
+        >
+          {deleteDialogState?.mode === "confirm" && (
+            <div className="space-y-3">
+              <p>
+                Tem certeza que deseja excluir{" "}
+                <span className="font-semibold">
+                  "{deleteDialogState.preview.optionLabel}"
+                </span>
+                ?
+              </p>
+              <p className="text-base-content/70 text-sm">
+                Essa acao remove a opcao do select para novos lancamentos.
+              </p>
+            </div>
+          )}
+          {deleteDialogState?.mode === "asset-confirm" && (
+            <div className="space-y-3">
+              <p>
+                Tem certeza que deseja excluir o ativo{" "}
+                <span className="font-semibold">
+                  "{deleteDialogState.preview.optionLabel}"
+                </span>
+                ?
+              </p>
+              <p className="text-base-content/70 text-sm">
+                Essa acao remove o ativo da sua lista para novos lancamentos.
+              </p>
+            </div>
+          )}
+        </ConfirmDialog>
 
-      <ConfirmDialog
-        isOpen={deleteDialogState?.mode === "error"}
-        title={deleteDialogState?.mode === "error" ? deleteDialogState.title : ""}
-        confirmLabel="Fechar"
-        cancelLabel={null}
-        onClose={() => setDeleteDialogState(null)}
-        onConfirm={() => setDeleteDialogState(null)}
-      >
-        {deleteDialogState?.mode === "error" && (
-          <p className="text-base-content/80">{deleteDialogState.message}</p>
-        )}
-      </ConfirmDialog>
+        <ConfirmDialog
+          isOpen={deleteDialogState?.mode === "error"}
+          title={deleteDialogState?.mode === "error" ? deleteDialogState.title : ""}
+          confirmLabel="Fechar"
+          cancelLabel={null}
+          onClose={() => setDeleteDialogState(null)}
+          onConfirm={() => setDeleteDialogState(null)}
+        >
+          {deleteDialogState?.mode === "error" && (
+            <p className="text-base-content/80">{deleteDialogState.message}</p>
+          )}
+        </ConfirmDialog>
       </Modal>
 
       <ConfirmDialog

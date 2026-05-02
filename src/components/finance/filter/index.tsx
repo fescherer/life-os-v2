@@ -1,7 +1,10 @@
 import { X } from "lucide-react";
 
 import type { FinanceAssetOption } from "@/queries/finances/assets";
-import type { FinanceEditRecord } from "@/queries/finances/entries";
+import type {
+  FinanceChangedRecord,
+  FinanceEditRecord,
+} from "@/queries/finances/entries";
 import type { FinanceSelectsData } from "@/types/finance-selects";
 import { FinanceAdvancedFilter } from "./advanced-filter";
 import { FinanceAddItem } from "./add-item";
@@ -12,6 +15,7 @@ type Props = {
   initialAssets: FinanceAssetOption[];
   initialSelects: FinanceSelectsData;
   onEditingChange: (record: FinanceEditRecord | null) => void;
+  onRecordSaved: (record: FinanceChangedRecord) => void;
 };
 
 export function FilterFinance({
@@ -19,6 +23,7 @@ export function FilterFinance({
   initialAssets,
   initialSelects,
   onEditingChange,
+  onRecordSaved,
 }: Props) {
   const filters = [
     "data 01/2026 - 30/04/2026",
@@ -39,6 +44,7 @@ export function FilterFinance({
             initialAssets={initialAssets}
             initialSelects={initialSelects}
             onEditingChange={onEditingChange}
+            onRecordSaved={onRecordSaved}
           />
           <FinanceConfig />
           <FinanceAdvancedFilter />

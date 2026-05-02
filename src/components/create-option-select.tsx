@@ -199,7 +199,7 @@ export function CreateOptionSelect<TOption extends SelectOption = SelectOption>(
           >
             <div
               ref={panelRef}
-              className="bg-base-100 fixed right-0 bottom-0 left-0 flex h-[70vh] max-h-[85vh] flex-col rounded-t-3xl p-4 shadow-2xl sm:static sm:h-[32rem] sm:w-full sm:max-w-md sm:rounded-3xl"
+              className="bg-base-100 fixed right-0 bottom-0 left-0 flex h-[70vh] max-h-[85vh] flex-col rounded-t-3xl p-4 shadow-2xl sm:static sm:h-128 sm:w-full sm:max-w-md sm:rounded-3xl"
             >
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>

@@ -1,30 +1,41 @@
 import { getSupabaseConfig } from "@/lib/queries";
+import {
+  FINANCE_CURRENCY,
+  FINANCE_CURRENCY_LOCALE,
+  FINANCE_FORMAT_LOCALE,
+  financeShortDateFormat,
+} from "@/lib/finance-format";
 import type { Tables } from "@/types/supabase";
 
 export type FinanceEntry = Tables<"fin_entries">;
 export type FinanceAssetEntry = Tables<"fin_assets_entries">;
 
+export type FinanceChangedRecord = {
+  id: number;
+  table: "fin_assets_entries" | "fin_entries";
+};
+
 export type FinanceEditRecord =
   | {
-      bankId: number;
-      categoryId: number;
-      date: string;
-      description: string;
-      id: number;
-      table: "fin_entries";
-      typeId: number;
-      value: number;
-    }
+    bankId: number;
+    categoryId: number;
+    date: string;
+    description: string;
+    id: number;
+    table: "fin_entries";
+    typeId: number;
+    value: number;
+  }
   | {
-      assetId: number;
-      bankId: number;
-      date: string;
-      description: string;
-      id: number;
-      table: "fin_assets_entries";
-      typeId: number;
-      value: number;
-    };
+    assetId: number;
+    bankId: number;
+    date: string;
+    description: string;
+    id: number;
+    table: "fin_assets_entries";
+    typeId: number;
+    value: number;
+  };
 
 export type FinanceEntryTableRow = {
   amount: string;
@@ -59,14 +70,25 @@ export type FinanceAssetEntryTableRow = {
 };
 
 function formatCurrencyFromCents(value: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    currency: "BRL",
+  return new Intl.NumberFormat(FINANCE_CURRENCY_LOCALE, {
+    currency: FINANCE_CURRENCY,
     style: "currency",
   }).format(value / 100);
 }
 
 function formatEntryDate(value: string) {
-  return new Intl.DateTimeFormat("pt-BR").format(new Date(value));
+  const [year, month, day] = value.slice(0, 10).split("-");
+
+  if (!year || !month || !day) {
+    return value;
+  }
+
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
+
+  return new Intl.DateTimeFormat(
+    FINANCE_FORMAT_LOCALE,
+    financeShortDateFormat
+  ).format(date);
 }
 
 async function getSelectOptionLabelMap(optionIds: number[]) {
