@@ -27,6 +27,7 @@ export type FinanceSelectDeletePreview = {
   optionId: number;
   optionLabel: string;
   references: FinanceSelectUsageReference[];
+  replacementRequired: boolean;
   usageCount: number;
 };
 

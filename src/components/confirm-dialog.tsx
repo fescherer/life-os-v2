@@ -15,6 +15,7 @@ type ConfirmDialogProps = {
   cancelLabel?: string | null
   children?: React.ReactNode
   confirmLabel: string
+  confirmDisabled?: boolean
   confirmVariant?: 'danger' | 'primary'
   isOpen: boolean
   isSubmitting?: boolean
@@ -27,6 +28,7 @@ export function ConfirmDialog({
   cancelLabel = 'Cancelar',
   children,
   confirmLabel,
+  confirmDisabled = false,
   confirmVariant = 'primary',
   isOpen,
   isSubmitting = false,
@@ -118,7 +120,7 @@ export function ConfirmDialog({
               confirmVariant === 'danger' ? 'btn-error' : 'btn-primary'
             }`}
             onClick={onConfirm}
-            disabled={isSubmitting}
+            disabled={isSubmitting || confirmDisabled}
           >
             {isSubmitting ? 'Carregando...' : confirmLabel}
           </button>

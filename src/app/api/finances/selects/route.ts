@@ -63,6 +63,10 @@ export async function DELETE(request: Request) {
       const deletedOption = await deleteFinanceSelectOption({
         selectName: body.selectName,
         optionId: body.optionId,
+        replacementOptionId:
+          typeof body.replacementOptionId === "number"
+            ? body.replacementOptionId
+            : undefined,
       });
 
       return Response.json(deletedOption);

@@ -257,6 +257,45 @@ async function countOptionUsage(input: {
   return count ?? 0;
 }
 
+async function getReplacementOption(input: {
+  optionId: number;
+  selectId: number;
+  supabase: Awaited<ReturnType<typeof getSupabaseConfig>>["supabase"];
+  userId: string;
+}) {
+  const { data: replacementOption, error } = await input.supabase
+    .from("selects_options")
+    .select("id")
+    .eq("user_id", input.userId)
+    .eq("select_id", input.selectId)
+    .eq("id", input.optionId)
+    .single();
+
+  if (error) throw error;
+
+  return replacementOption;
+}
+
+async function replaceOptionUsage(input: {
+  fromOptionId: number;
+  selectName: FinanceSelectName;
+  supabase: Awaited<ReturnType<typeof getSupabaseConfig>>["supabase"];
+  toOptionId: number;
+  userId: string;
+}) {
+  const targets = FINANCE_SELECT_USAGE_MAP[input.selectName];
+
+  for (const target of targets) {
+    const { error } = await input.supabase
+      .from(target.table)
+      .update({ [target.column]: input.toOptionId })
+      .eq("user_id", input.userId)
+      .eq(target.column, input.fromOptionId);
+
+    if (error) throw error;
+  }
+}
+
 export async function previewFinanceSelectOptionDeletion(input: {
   optionId: number;
   selectName: FinanceSelectName;
@@ -292,21 +331,43 @@ export async function previewFinanceSelectOptionDeletion(input: {
     optionId: option.id,
     optionLabel: option.label,
     references,
+    replacementRequired: usageCount > 0,
     usageCount,
   };
 }
 
 export async function deleteFinanceSelectOption(input: {
   optionId: number;
+  replacementOptionId?: number;
   selectName: FinanceSelectName;
 }): Promise<FinanceSelectDeletePreview> {
   const preview = await previewFinanceSelectOptionDeletion(input);
+  const { selectId, supabase, userId } = await getFinanceSelectOptionContext(input);
 
-  if (!preview.canDelete) {
+  if (!preview.canDelete && typeof input.replacementOptionId !== "number") {
     throw new Error("Essa opcao ainda esta sendo usada e nao pode ser excluida.");
   }
 
-  const { selectId, supabase, userId } = await getFinanceSelectOptionContext(input);
+  if (typeof input.replacementOptionId === "number") {
+    if (input.replacementOptionId === input.optionId) {
+      throw new Error("Escolha uma opcao diferente para substituir.");
+    }
+
+    await getReplacementOption({
+      optionId: input.replacementOptionId,
+      selectId,
+      supabase,
+      userId,
+    });
+
+    await replaceOptionUsage({
+      fromOptionId: input.optionId,
+      selectName: input.selectName,
+      supabase,
+      toOptionId: input.replacementOptionId,
+      userId,
+    });
+  }
 
   const { error } = await supabase
     .from("selects_options")

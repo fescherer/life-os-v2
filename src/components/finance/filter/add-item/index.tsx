@@ -83,6 +83,7 @@ type DeleteDialogState =
     mode: "confirm";
     option: FinanceSelectOption;
     preview: FinanceSelectDeletePreview;
+    replacementValue: string;
     selectName: FinanceSelectName;
   }
   | {
@@ -168,6 +169,7 @@ async function previewFinanceSelectOptionDeletionRequest(input: {
 
 async function deleteFinanceSelectOptionRequest(input: {
   optionId: number;
+  replacementOptionId?: number;
   selectName: FinanceSelectName;
 }): Promise<FinanceSelectDeletePreview> {
   const response = await fetch("/api/finances/selects", {
@@ -410,13 +412,17 @@ export function FinanceAddItem({
 
   const deleteOptionMutation = useMutation({
     mutationFn: deleteFinanceSelectOptionRequest,
-    onSuccess: (_, variables) => {
+    onSuccess: async (_, variables) => {
       const key = getFinanceSelectKeyByName(variables.selectName);
+      let replacementOption: FinanceSelectOption | undefined;
 
       queryClient.setQueryData<FinanceSelectsData>(
         ["finance-selects"],
         (current) => {
           const base = current ?? initialSelects;
+          replacementOption = base[key].find(
+            (option) => option.id === variables.replacementOptionId
+          );
 
           return {
             ...base,
@@ -424,6 +430,17 @@ export function FinanceAddItem({
           };
         }
       );
+
+      if (replacementOption) {
+        replaceDeletedFormValue({
+          replacementValue: replacementOption.value,
+          selectName: variables.selectName,
+        });
+      }
+
+      await queryClient.invalidateQueries({
+        queryKey: ["finances"],
+      });
     },
   });
 
@@ -592,6 +609,7 @@ export function FinanceAddItem({
           mode: "confirm",
           option,
           preview,
+          replacementValue: "",
           selectName,
         });
       } catch (error) {
@@ -612,9 +630,23 @@ export function FinanceAddItem({
   async function handleConfirmDeleteOption() {
     try {
       if (deleteDialogState?.mode === "confirm") {
+        const replacementOption = selectData[
+          getFinanceSelectKeyByName(deleteDialogState.selectName)
+        ].find(
+          (option) => option.value === deleteDialogState.replacementValue
+        );
+
+        if (
+          deleteDialogState.preview.replacementRequired &&
+          !replacementOption
+        ) {
+          throw new Error("Escolha uma opcao para substituir antes de excluir.");
+        }
+
         await deleteOptionMutation.mutateAsync({
           selectName: deleteDialogState.selectName,
           optionId: deleteDialogState.option.id,
+          replacementOptionId: replacementOption?.id,
         });
       }
 
@@ -634,6 +666,29 @@ export function FinanceAddItem({
         title: "Nao foi possivel excluir",
         message,
       });
+    }
+  }
+
+  function replaceDeletedFormValue(input: {
+    replacementValue: string;
+    selectName: FinanceSelectName;
+  }) {
+    if (input.selectName === FINANCE_SELECT_NAMES.banks) {
+      setValue("bank", input.replacementValue);
+      return;
+    }
+
+    if (input.selectName === FINANCE_SELECT_NAMES.entryCategories) {
+      setValue("category", input.replacementValue);
+      return;
+    }
+
+    if (
+      input.selectName === typeSelectName ||
+      input.selectName === FINANCE_SELECT_NAMES.entryTypes ||
+      input.selectName === FINANCE_SELECT_NAMES.assetEntryTypes
+    ) {
+      setValue("type", input.replacementValue);
     }
   }
 
@@ -988,6 +1043,11 @@ export function FinanceAddItem({
               : "Excluir opcao"
           }
           confirmLabel="Excluir"
+          confirmDisabled={
+            deleteDialogState?.mode === "confirm" &&
+            deleteDialogState.preview.replacementRequired &&
+            !deleteDialogState.replacementValue
+          }
           confirmVariant="danger"
           isSubmitting={deleteOptionMutation.isPending || deleteAssetMutation.isPending}
           onClose={() => setDeleteDialogState(null)}
@@ -998,13 +1058,45 @@ export function FinanceAddItem({
               <p>
                 Tem certeza que deseja excluir{" "}
                 <span className="font-semibold">
-                  "{deleteDialogState.preview.optionLabel}"
+                  &quot;{deleteDialogState.preview.optionLabel}&quot;
                 </span>
                 ?
               </p>
               <p className="text-base-content/70 text-sm">
                 Essa acao remove a opcao do select para novos lancamentos.
               </p>
+              {deleteDialogState.preview.replacementRequired && (
+                <Field label="Substituir por">
+                  <select
+                    className="select select-bordered w-full"
+                    value={deleteDialogState.replacementValue}
+                    onChange={(event) =>
+                      setDeleteDialogState({
+                        ...deleteDialogState,
+                        replacementValue: event.target.value,
+                      })
+                    }
+                  >
+                    <option value="">Selecione uma opcao</option>
+                    {selectData[
+                      getFinanceSelectKeyByName(deleteDialogState.selectName)
+                    ]
+                      .filter((option) => option.id !== deleteDialogState.option.id)
+                      .map((option) => (
+                        <option key={option.id} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                  </select>
+                </Field>
+              )}
+              {deleteDialogState.preview.replacementRequired && (
+                <p className="text-base-content/70 text-sm">
+                  Ela esta sendo usada em {deleteDialogState.preview.usageCount}{" "}
+                  registro(s). Os registros existentes serao atualizados para a
+                  opcao escolhida.
+                </p>
+              )}
             </div>
           )}
           {deleteDialogState?.mode === "asset-confirm" && (
@@ -1012,7 +1104,7 @@ export function FinanceAddItem({
               <p>
                 Tem certeza que deseja excluir o ativo{" "}
                 <span className="font-semibold">
-                  "{deleteDialogState.preview.optionLabel}"
+                  &quot;{deleteDialogState.preview.optionLabel}&quot;
                 </span>
                 ?
               </p>
