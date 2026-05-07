@@ -51,19 +51,99 @@ function mergeFinanceOptions(
   );
 }
 
-const formSchema = z.object({
-  launchType: z.enum(["fin_entries", "fin_asset_entries"]),
-  date: z.string().min(1, "Informe a data"),
-  amount: z.number().positive("Informe um valor valido"),
-  description: z.string().optional(),
-  bank: z.string().min(1, "Selecione um banco"),
-  type: z.string().min(1, "Selecione um tipo"),
-  category: z.string().optional(),
-  asset: z.string().optional(),
-});
+function resolveEntryTypeId(options: FinanceSelectOption[], valueInCents: number) {
+  const isIncome = valueInCents > 0;
+  const targetPattern = isIncome
+    ? /(income|entrada|receita|ganho|credito)/i
+    : /(expense|saida|despesa|gasto|debito)/i;
+
+  const directValueMatch = options.find(
+    (option) => option.value.toLowerCase() === (isIncome ? "income" : "expense")
+  );
+
+  if (directValueMatch) {
+    return directValueMatch.id;
+  }
+
+  const semanticMatch = options.find((option) =>
+    targetPattern.test(`${option.value} ${option.label}`)
+  );
+
+  if (semanticMatch) {
+    return semanticMatch.id;
+  }
+
+  if (options.length === 1) {
+    return options[0].id;
+  }
+
+  throw new Error(
+    "Nao foi possivel inferir o tipo de lancamento. Configure os tipos de Entry para Income/Expense."
+  );
+}
+
+function formatCentsInput(valueInCents: number) {
+  const isNegative = valueInCents < 0;
+  const absoluteCents = Math.abs(valueInCents);
+  const integerPart = Math.floor(absoluteCents / 100);
+  const decimalPart = String(absoluteCents % 100).padStart(2, "0");
+
+  return `${isNegative ? "-" : ""}${integerPart},${decimalPart}`;
+}
+
+function parseMaskedCurrencyToCents(inputValue: string) {
+  const isNegative = inputValue.includes("-");
+  const digits = inputValue.replace(/\D/g, "");
+
+  if (!digits) {
+    return 0;
+  }
+
+  const cents = Number.parseInt(digits, 10);
+
+  if (!Number.isFinite(cents)) {
+    return 0;
+  }
+
+  return isNegative ? -cents : cents;
+}
+
+const formSchema = z
+  .object({
+    launchType: z.enum(["fin_entries", "fin_asset_entries"]),
+    date: z.string().min(1, "Informe a data"),
+    amount: z.number().int().refine((value) => Number.isFinite(value) && value !== 0, {
+      message: "Informe um valor diferente de zero",
+    }),
+    description: z.string().optional(),
+    bank: z.string().min(1, "Selecione um banco"),
+    type: z.string().optional(),
+    category: z.string().optional(),
+    asset: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.launchType === "fin_asset_entries" && !data.type?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Selecione um tipo",
+        path: ["type"],
+      });
+    }
+  });
 
 export type FinanceFormData = z.infer<typeof formSchema>;
 export type Option = SelectOption;
+
+const EMPTY_FINANCE_FORM: FinanceFormData = {
+  launchType: "fin_entries",
+  date: "",
+  amount: 0,
+  description: "",
+  bank: "",
+  type: "",
+  category: "",
+  asset: "",
+};
 
 type Props = {
   editingRecord: FinanceEditRecord | null;
@@ -367,16 +447,7 @@ export function FinanceAddItem({
     formState: { errors },
   } = useForm<FinanceFormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      launchType: "fin_entries",
-      date: "",
-      amount: 0,
-      description: "",
-      bank: "",
-      type: "",
-      category: "",
-      asset: "",
-    },
+    defaultValues: EMPTY_FINANCE_FORM,
   });
 
   const { data: selectData } = useQuery({
@@ -505,19 +576,7 @@ export function FinanceAddItem({
   const isEditingRef = useRef(isEditing);
 
   isEditingRef.current = isEditing;
-
-  const editingLaunchTypeLabel =
-    editingRecord?.table === "fin_assets_entries" ? "Asset Entry" : "Entry";
-
-  const typeSelectName =
-    launchType === "fin_entries"
-      ? FINANCE_SELECT_NAMES.entryTypes
-      : FINANCE_SELECT_NAMES.assetEntryTypes;
-
-  const typeOptions =
-    launchType === "fin_entries"
-      ? selectData.entryTypes
-      : selectData.assetEntryTypes;
+  const assetEntryTypeOptions = selectData.assetEntryTypes;
   const isAppBusy =
     createFinanceRecordMutation.isPending ||
     createAssetMutation.isPending ||
@@ -543,22 +602,19 @@ export function FinanceAddItem({
       const bankOption = selectData.banks.find(
         (option) => option.id === editingRecord.bankId
       );
-      const typeOption = selectData.entryTypes.find(
-        (option) => option.id === editingRecord.typeId
-      );
       const categoryOption = selectData.entryCategories.find(
         (option) => option.id === editingRecord.categoryId
       );
 
       reset({
-        amount: editingRecord.value / 100,
+        amount: editingRecord.value,
         asset: "",
         bank: bankOption?.value ?? "",
         category: categoryOption?.value ?? "",
         date: editingRecord.date.slice(0, 10),
         description: editingRecord.description,
         launchType: "fin_entries",
-        type: typeOption?.value ?? "",
+        type: "",
       });
     } else {
       const bankOption = selectData.banks.find(
@@ -572,7 +628,7 @@ export function FinanceAddItem({
       );
 
       reset({
-        amount: editingRecord.value / 100,
+        amount: editingRecord.value,
         asset: assetOption?.value ?? "",
         bank: bankOption?.value ?? "",
         category: "",
@@ -684,8 +740,6 @@ export function FinanceAddItem({
     }
 
     if (
-      input.selectName === typeSelectName ||
-      input.selectName === FINANCE_SELECT_NAMES.entryTypes ||
       input.selectName === FINANCE_SELECT_NAMES.assetEntryTypes
     ) {
       setValue("type", input.replacementValue);
@@ -752,17 +806,12 @@ export function FinanceAddItem({
       }
 
       const bankOption = selectData.banks.find((option) => option.value === data.bank);
-      const typeOption = typeOptions.find((option) => option.value === data.type);
 
       if (!bankOption) {
         throw new Error("Selecione um banco valido.");
       }
 
-      if (!typeOption) {
-        throw new Error("Selecione um tipo valido.");
-      }
-
-      const value = Math.round(data.amount * 100);
+      const value = data.amount;
       const description = data.description?.trim() ?? "";
       let savedRecord: FinanceChangedRecord | null = null;
 
@@ -775,6 +824,8 @@ export function FinanceAddItem({
           throw new Error("Selecione uma categoria valida.");
         }
 
+        const inferredTypeId = resolveEntryTypeId(selectData.entryTypes, value);
+
         if (editingRecord?.table === "fin_entries") {
           const updatedRecord = await updateFinanceRecordMutation.mutateAsync({
             bankId: bankOption.id,
@@ -783,7 +834,7 @@ export function FinanceAddItem({
             description,
             id: editingRecord.id,
             table: "fin_entries",
-            typeId: typeOption.id,
+            typeId: inferredTypeId,
             value,
           });
           savedRecord = {
@@ -797,7 +848,7 @@ export function FinanceAddItem({
             date: data.date,
             description,
             table: "fin_entries",
-            typeId: typeOption.id,
+            typeId: inferredTypeId,
             value,
           });
           savedRecord = {
@@ -810,6 +861,14 @@ export function FinanceAddItem({
 
         if (!assetOption) {
           throw new Error("Selecione um ativo valido.");
+        }
+
+        const typeOption = assetEntryTypeOptions.find(
+          (option) => option.value === data.type
+        );
+
+        if (!typeOption) {
+          throw new Error("Selecione um tipo valido.");
         }
 
         if (editingRecord?.table === "fin_assets_entries") {
@@ -849,14 +908,9 @@ export function FinanceAddItem({
       }
 
       reset({
+        ...EMPTY_FINANCE_FORM,
         launchType: data.launchType,
-        date: "",
-        amount: 0,
-        description: "",
-        bank: "",
-        type: "",
-        category: "",
-        asset: "",
+        type: data.launchType === "fin_asset_entries" ? data.type ?? "" : "",
       });
       setIsAddItemOpen(false);
       onEditingChange(null);
@@ -886,6 +940,10 @@ export function FinanceAddItem({
         onOpenChange={(nextIsOpen) => {
           setIsAddItemOpen(nextIsOpen);
 
+          if (!editingRecord) {
+            reset(EMPTY_FINANCE_FORM);
+          }
+
           if (!nextIsOpen) {
             onEditingChange(null);
           }
@@ -893,33 +951,35 @@ export function FinanceAddItem({
         isLocked={isAppBusy}
         triggerContent={<div className="btn btn-sm">{title}</div>}
         modalTitle={
-          <div className="flex items-center gap-2">
-            {editingRecord ? <span>Editar lancamento</span> : title}
+          <div className="flex w-full items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              {editingRecord ? <span>Editar lancamento</span> : title}
+            </div>
+
+            <div className="tabs tabs-boxed bg-base-200/40 p-1">
+              <button
+                type="button"
+                className={`tab px-3 text-xs ${launchType === "fin_entries" ? "tab-active" : ""}`}
+                onClick={() => setValue("launchType", "fin_entries")}
+                disabled={isEditing || isAppBusy}
+              >
+                Entry
+              </button>
+              <button
+                type="button"
+                className={`tab px-3 text-xs ${launchType === "fin_asset_entries" ? "tab-active" : ""}`}
+                onClick={() => setValue("launchType", "fin_asset_entries")}
+                disabled={isEditing || isAppBusy}
+              >
+                Asset Entry
+              </button>
+            </div>
           </div>
         }
       >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 py-4">
           <fieldset disabled={isAppBusy} className="space-y-5">
-            <Field label="Tipo de lancamento">
-              {isEditing ? (
-                <>
-                  <input type="hidden" {...register("launchType")} />
-                  <input
-                    className="input input-bordered w-full"
-                    readOnly
-                    value={editingLaunchTypeLabel}
-                  />
-                </>
-              ) : (
-                <select
-                  className="select select-bordered w-full"
-                  {...register("launchType")}
-                >
-                  <option value="fin_entries">Entry</option>
-                  <option value="fin_asset_entries">Asset Entry</option>
-                </select>
-              )}
-            </Field>
+            <input type="hidden" {...register("launchType")} />
 
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="Data" error={errors.date?.message}>
@@ -936,15 +996,22 @@ export function FinanceAddItem({
               </Field>
 
               <Field label="Valor" error={errors.amount?.message}>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  className="input input-bordered w-full"
-                  placeholder="Ex: 129.90"
-                  {...register("amount", {
-                    valueAsNumber: true,
-                  })}
+                <Controller
+                  control={control}
+                  name="amount"
+                  render={({ field }) => (
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      className="input input-bordered w-full"
+                      placeholder="Ex: 129,90 ou -129,90"
+                      value={formatCentsInput(field.value ?? 0)}
+                      onChange={(event) => {
+                        field.onChange(parseMaskedCurrencyToCents(event.target.value));
+                      }}
+                      onFocus={(event) => event.target.select()}
+                    />
+                  )}
                 />
               </Field>
             </div>
@@ -957,7 +1024,13 @@ export function FinanceAddItem({
               />
             </Field>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div
+              className={
+                launchType === "fin_asset_entries"
+                  ? "grid gap-4 md:grid-cols-2"
+                  : "grid gap-4"
+              }
+            >
               <Controller
                 control={control}
                 name="bank"
@@ -976,21 +1049,27 @@ export function FinanceAddItem({
                 )}
               />
 
-              <Controller
-                control={control}
-                name="type"
-                render={({ field }) => (
-                  <CreateOptionSelect
-                    label="Tipo"
-                    value={field.value}
-                    options={typeOptions}
-                    onChange={field.onChange}
-                    onCreate={handleCreateSelectOption(typeSelectName)}
-                    onDeleteOption={handleDeleteSelectOption(typeSelectName)}
-                    placeholder="Selecionar tipo"
-                  />
-                )}
-              />
+              {launchType === "fin_asset_entries" && (
+                <Controller
+                  control={control}
+                  name="type"
+                  render={({ field }) => (
+                    <CreateOptionSelect
+                      label="Tipo"
+                      value={field.value || ""}
+                      options={assetEntryTypeOptions}
+                      onChange={field.onChange}
+                      onCreate={handleCreateSelectOption(
+                        FINANCE_SELECT_NAMES.assetEntryTypes
+                      )}
+                      onDeleteOption={handleDeleteSelectOption(
+                        FINANCE_SELECT_NAMES.assetEntryTypes
+                      )}
+                      placeholder="Selecionar tipo"
+                    />
+                  )}
+                />
+              )}
             </div>
 
             {launchType === "fin_entries" ? (
@@ -1142,14 +1221,8 @@ export function FinanceAddItem({
         }
         onConfirm={() => {
           reset({
+            ...EMPTY_FINANCE_FORM,
             launchType: successDialogState.launchType ?? "fin_entries",
-            date: "",
-            amount: 0,
-            description: "",
-            bank: "",
-            type: "",
-            category: "",
-            asset: "",
           });
           setSuccessDialogState({
             isOpen: false,

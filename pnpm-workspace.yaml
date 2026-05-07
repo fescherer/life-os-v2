@@ -1,3 +1,4 @@
-ignoredBuiltDependencies:
-  - sharp
-  - unrs-resolver
+allowBuilds:
+  sharp: true
+  simple-git-hooks: true
+  unrs-resolver: true
