@@ -1,5 +1,5 @@
 type FieldProps = {
-  label: string;
+  label: React.ReactNode;
   error?: string;
   children: React.ReactNode;
 };

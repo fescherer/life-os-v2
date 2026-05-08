@@ -108,6 +108,26 @@ function parseMaskedCurrencyToCents(inputValue: string) {
   return isNegative ? -cents : cents;
 }
 
+function getAmountIndicatorClassName(valueInCents: number) {
+  const classNames = [
+    "h-3",
+    "w-3",
+    "rounded-full",
+    "border",
+    "transition-colors",
+  ];
+
+  if (valueInCents > 0) {
+    classNames.push("border-success/40", "bg-success/70");
+  } else if (valueInCents < 0) {
+    classNames.push("border-error/40", "bg-error/70");
+  } else {
+    classNames.push("border-base-300", "bg-base-100");
+  }
+
+  return classNames.join(" ");
+}
+
 const formSchema = z
   .object({
     launchType: z.enum(["fin_entries", "fin_asset_entries"]),
@@ -572,6 +592,10 @@ export function FinanceAddItem({
     control,
     name: "launchType",
   });
+  const amount = useWatch({
+    control,
+    name: "amount",
+  });
   const isEditing = Boolean(editingRecord);
   const isEditingRef = useRef(isEditing);
 
@@ -984,7 +1008,7 @@ export function FinanceAddItem({
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="Data" error={errors.date?.message}>
                 <Controller
-                  control={control}
+                  control={control} 
                   name="date"
                   render={({ field }) => (
                     <FinanceDatePicker
@@ -995,7 +1019,18 @@ export function FinanceAddItem({
                 />
               </Field>
 
-              <Field label="Valor" error={errors.amount?.message}>
+              <Field
+                label={
+                  <span className="flex w-full items-center justify-between gap-3">
+                    <span>Valor</span>
+                    <span
+                      className={getAmountIndicatorClassName(amount ?? 0)}
+                      aria-hidden="true"
+                    />
+                  </span>
+                }
+                error={errors.amount?.message}
+              >
                 <Controller
                   control={control}
                   name="amount"
@@ -1242,7 +1277,7 @@ export function FinanceAddItem({
       {isAppBusy &&
         createPortal(
           <div
-            className="fixed inset-0 z-[1300] flex items-center justify-center bg-black/35 backdrop-blur-[1px]"
+            className="fixed inset-0 z-1300 flex items-center justify-center bg-black/35 backdrop-blur-[1px]"
             aria-live="polite"
             aria-busy="true"
           >

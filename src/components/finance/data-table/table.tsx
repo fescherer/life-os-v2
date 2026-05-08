@@ -42,6 +42,17 @@ function getCellTitle<T extends RowData>(row: RowData, column: Column<T>) {
   return formatFullDate(row.rawDate);
 }
 
+function getCellClassName<T extends RowData>(row: RowData, column: Column<T>) {
+  const classNames = ["whitespace-nowrap"];
+
+  if (column.key === "amount" && typeof row.rawValue === "number") {
+    if (row.rawValue > 0) classNames.push("py-2 px-4 flex w-26  text-center rounded-full bg-success/75");
+    if (row.rawValue < 0) classNames.push("py-2 px-4 flex w-26  text-center rounded-full bg-error/75");
+  }
+
+  return classNames.join(" ");
+}
+
 export default function FinanceDataTable<T extends RowData>({
   columns,
   data,
@@ -142,10 +153,9 @@ export default function FinanceDataTable<T extends RowData>({
                   {columns.map((column) => (
                     <td
                       key={String(column.key)}
-                      className="whitespace-nowrap"
                       title={getCellTitle(row, column)}
                     >
-                      <span>{String(row[column.key as string] ?? "")}</span>
+                      <span className={getCellClassName(row, column)}>{String(row[column.key as string] ?? "")}</span>
                     </td>
                   ))}
                   {onEditRow && (
