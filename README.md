@@ -1,36 +1,122 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Table fin_asset_transactions {
+  id integer [primary key]
+  owner_id uuid
+  created_at timestamp
+  updated_at timestamp
+  occurred_at timestamp
+  amount_cents integer [note: 'store in cents']
+  description string
+  account_id integer [note: "ex: Nubank, Inter"]
+  transaction_type integer [note: "BUY, SELL, INCOME"]
+  asset_id integer
+}
 
-## Getting Started
+Table fin_assets {
+  id integer [primary key]
+  owner_id uuid
+  created_at timestamp
+  updated_at timestamp
+  asset_type integer [note: "FII, STOCK, CRYPTO"]
+  name string
+  ticker string
+}
 
-First, run the development server:
+Table fin_entries {
+  id integer [primary key]
+  owner_id uuid
+  created_at timestamp
+  updated_at timestamp
+  occurred_at timestamp
+  amount_cents integer
+  description string
+  account_id integer [note: "bank or account"]
+  entry_type integer [note: "EXPENSE, INCOME, TRANSFER"]
+  category_id integer [note: "Food, Salary, Dividends, Subscriptions"]
+}
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Table shipment_tracking {
+  id integer [primary key]
+  owner_id uuid
+  created_at timestamp
+  updated_at timestamp
+  entry_id integer
+  carrier_id integer [note: "Correios, Shopee, Mercado Livre, Amazon"]
+  tracking_url string
+  estimated_delivery timestamp
+  is_delivered boolean
+}
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Table coins {
+  id integer [primary key]
+  owner_id uuid
+  created_at timestamp
+  updated_at timestamp
+  name string
+  numista_url string
+  minting_period string [note: "ex: 2016 or 2000-2016"]
+  currency_family integer [note: "Real, Cruzeiro, etc"]
+  owned boolean
+  condition integer [note: "poor, acceptable, good, excellent"]
+  is_commemorative boolean
+}
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Table gogo_items {
+  id integer [primary key]
+  owner_id uuid
+  created_at timestamp
+  updated_at timestamp
+  collection_id integer [note: "Megatrip, Urban Toys"]
+  is_official boolean
+  quantity integer
+  classification string [note: "ex: 1-05 or #fff000"]
+}
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Table gogo_entry_links {
+  id integer [primary key]
+  owner_id uuid
+  created_at timestamp
+  updated_at timestamp
+  entry_id integer
+}
 
-## Learn More
+Table media_list {
+  id integer [primary key]
+  owner_id uuid
+  created_at timestamp
+  updated_at timestamp
+  list_type integer [note: "watchlist, reading_list, wishlist"]
+  description string
+  links string[]
+}
 
-To learn more about Next.js, take a look at the following resources:
+Table reviews {
+  id integer [primary key]
+  owner_id uuid
+  created_at timestamp
+  updated_at timestamp
+  review_date timestamp
+  finished_at timestamp
+  media_title string
+  media_segment string [note: "arc, season, volume"]
+  content string
+}
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Table selects {
+  id integer [primary key]
+  owner_id uuid
+  name string
+}
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Table select_options {
+  id integer [primary key]
+  owner_id uuid
+  select_id integer
+  label string
+  value string
+}
 
-## Deploy on Vercel
+Ref: select_options.select_id < selects.id
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Ref: fin_asset_transactions.asset_id < fin_assets.id
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Ref: shipment_tracking.entry_id < fin_entries.id

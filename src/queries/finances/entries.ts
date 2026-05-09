@@ -70,10 +70,12 @@ export type FinanceAssetEntryTableRow = {
 };
 
 function formatCurrencyFromCents(value: number) {
-  return new Intl.NumberFormat(FINANCE_CURRENCY_LOCALE, {
+  const formattedValue = new Intl.NumberFormat(FINANCE_CURRENCY_LOCALE, {
     currency: FINANCE_CURRENCY,
     style: "currency",
-  }).format(value / 100);
+  }).format(Math.abs(value) / 100);
+
+  return value < 0 ? formattedValue.replace(/\d/, "-$&") : formattedValue;
 }
 
 function formatEntryDate(value: string) {

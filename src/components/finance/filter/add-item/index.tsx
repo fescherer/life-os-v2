@@ -8,12 +8,8 @@ import {
   CreateOptionSelect,
   type SelectOption,
 } from "@/components/create-option-select";
-import {
-  type FinanceAssetDeletePreview,
-  type FinanceAssetOption,
-} from "@/queries/finances/assets";
+import type { FinanceAssetOption } from "@/queries/finances/assets";
 import type {
-  FinanceAssetEntry,
   FinanceChangedRecord,
   FinanceEditRecord,
   FinanceEntry,
@@ -29,12 +25,21 @@ import {
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { DiamondPlus, Loader2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { createPortal } from "react-dom";
-import { FinanceAssetFields } from "./finance-asset-fields";
-import { FinanceEntryFields } from "./finance-entry-fields";
+
+type TransactionType = "expense" | "income" | "transfer";
+
+const TRANSACTION_TYPES: Array<{
+  label: string;
+  value: TransactionType;
+}> = [
+  { label: "Expense", value: "expense" },
+  { label: "Income", value: "income" },
+  { label: "Transfer", value: "transfer" },
+];
 
 function mergeFinanceOptions(
   currentOptions: FinanceSelectOption[],
@@ -51,35 +56,56 @@ function mergeFinanceOptions(
   );
 }
 
-function resolveEntryTypeId(options: FinanceSelectOption[], valueInCents: number) {
-  const isIncome = valueInCents > 0;
-  const targetPattern = isIncome
-    ? /(income|entrada|receita|ganho|credito)/i
-    : /(expense|saida|despesa|gasto|debito)/i;
+function findSemanticOption(
+  options: FinanceSelectOption[],
+  patterns: RegExp[]
+) {
+  return options.find((option) =>
+    patterns.some((pattern) => pattern.test(`${option.value} ${option.label}`))
+  );
+}
+
+function resolveEntryTypeId(
+  options: FinanceSelectOption[],
+  transactionType: TransactionType
+) {
+  const patternsByType: Record<TransactionType, RegExp[]> = {
+    expense: [/(^|[\s_-])(expense|saida|despesa|gasto|debito)($|[\s_-])/i],
+    income: [/(^|[\s_-])(income|entrada|receita|ganho|credito)($|[\s_-])/i],
+    transfer: [/(^|[\s_-])(transfer|transferencia)($|[\s_-])/i],
+  };
 
   const directValueMatch = options.find(
-    (option) => option.value.toLowerCase() === (isIncome ? "income" : "expense")
+    (option) => option.value.toLowerCase() === transactionType
   );
 
   if (directValueMatch) {
     return directValueMatch.id;
   }
 
-  const semanticMatch = options.find((option) =>
-    targetPattern.test(`${option.value} ${option.label}`)
-  );
+  const semanticMatch = findSemanticOption(options, patternsByType[transactionType]);
 
   if (semanticMatch) {
     return semanticMatch.id;
   }
 
-  if (options.length === 1) {
+  if (transactionType !== "transfer" && options.length === 1) {
     return options[0].id;
   }
 
   throw new Error(
-    "Nao foi possivel inferir o tipo de lancamento. Configure os tipos de Entry para Income/Expense."
+    "Nao foi possivel inferir o tipo de lancamento. Configure os tipos de Entry para Expense, Income e Transfer."
   );
+}
+
+function getSignedAmount(
+  amountInCents: number,
+  transactionType: TransactionType
+) {
+  const absoluteAmount = Math.abs(amountInCents);
+
+  if (transactionType === "expense") return -absoluteAmount;
+  return absoluteAmount;
 }
 
 function formatCentsInput(valueInCents: number) {
@@ -130,24 +156,44 @@ function getAmountIndicatorClassName(valueInCents: number) {
 
 const formSchema = z
   .object({
-    launchType: z.enum(["fin_entries", "fin_asset_entries"]),
     date: z.string().min(1, "Informe a data"),
     amount: z.number().int().refine((value) => Number.isFinite(value) && value !== 0, {
       message: "Informe um valor diferente de zero",
     }),
     description: z.string().optional(),
     bank: z.string().min(1, "Selecione um banco"),
-    type: z.string().optional(),
     category: z.string().optional(),
-    asset: z.string().optional(),
+    destinationBank: z.string().optional(),
+    transactionType: z.enum(["expense", "income", "transfer"]),
   })
   .superRefine((data, ctx) => {
-    if (data.launchType === "fin_asset_entries" && !data.type?.trim()) {
+    if (data.transactionType !== "transfer" && !data.category?.trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Selecione um tipo",
-        path: ["type"],
+        message:
+          data.transactionType === "income"
+            ? "Selecione o tipo de renda"
+            : "Selecione uma categoria",
+        path: ["category"],
       });
+    }
+
+    if (data.transactionType === "transfer") {
+      if (!data.destinationBank?.trim()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Selecione o banco de destino",
+          path: ["destinationBank"],
+        });
+      }
+
+      if (data.destinationBank && data.destinationBank === data.bank) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Escolha um banco de destino diferente",
+          path: ["destinationBank"],
+        });
+      }
     }
   });
 
@@ -155,14 +201,13 @@ export type FinanceFormData = z.infer<typeof formSchema>;
 export type Option = SelectOption;
 
 const EMPTY_FINANCE_FORM: FinanceFormData = {
-  launchType: "fin_entries",
   date: "",
   amount: 0,
   description: "",
   bank: "",
-  type: "",
   category: "",
-  asset: "",
+  destinationBank: "",
+  transactionType: "expense",
 };
 
 type Props = {
@@ -174,11 +219,6 @@ type Props = {
 };
 
 type DeleteDialogState =
-  | {
-    asset: FinanceAssetOption;
-    mode: "asset-confirm";
-    preview: FinanceAssetDeletePreview;
-  }
   | {
     mode: "confirm";
     option: FinanceSelectOption;
@@ -196,11 +236,11 @@ type DeleteDialogState =
 type SuccessDialogState =
   | {
     isOpen: true;
-    launchType: FinanceFormData["launchType"];
+    transactionType: FinanceFormData["transactionType"];
   }
   | {
     isOpen: false;
-    launchType: FinanceFormData["launchType"] | null;
+    transactionType: FinanceFormData["transactionType"] | null;
   };
 
 async function fetchFinanceSelects(): Promise<FinanceSelectsData> {
@@ -208,16 +248,6 @@ async function fetchFinanceSelects(): Promise<FinanceSelectsData> {
 
   if (!response.ok) {
     throw new Error("Erro ao carregar selects financeiros.");
-  }
-
-  return response.json();
-}
-
-async function fetchFinanceAssets(): Promise<FinanceAssetOption[]> {
-  const response = await fetch("/api/finances/assets");
-
-  if (!response.ok) {
-    throw new Error("Erro ao carregar ativos financeiros.");
   }
 
   return response.json();
@@ -292,94 +322,15 @@ async function deleteFinanceSelectOptionRequest(input: {
   return payload;
 }
 
-async function createFinanceAssetRequest(input: {
-  name: string;
-  ticker: string;
+async function createFinanceRecordRequest(input: {
+  bankId: number;
+  categoryId: number;
+  date: string;
+  description: string;
+  table: "fin_entries";
   typeId: number;
-}): Promise<FinanceAssetOption> {
-  const response = await fetch("/api/finances/assets", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(input),
-  });
-
-  const payload = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(payload?.error || "Erro ao criar ativo.");
-  }
-
-  return payload;
-}
-
-async function previewFinanceAssetDeletionRequest(input: {
-  assetId: number;
-}): Promise<FinanceAssetDeletePreview> {
-  const response = await fetch("/api/finances/assets", {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(input),
-  });
-
-  const payload = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw Object.assign(
-      new Error(payload?.error || "Erro ao verificar exclusao do ativo."),
-      { payload, status: response.status }
-    );
-  }
-
-  return payload;
-}
-
-async function deleteFinanceAssetRequest(input: {
-  assetId: number;
-}): Promise<FinanceAssetDeletePreview> {
-  const response = await fetch("/api/finances/assets", {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      ...input,
-      confirm: true,
-    }),
-  });
-
-  const payload = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    throw new Error(payload?.error || "Erro ao excluir ativo.");
-  }
-
-  return payload;
-}
-
-async function createFinanceRecordRequest(input:
-  | {
-    bankId: number;
-    categoryId: number;
-    date: string;
-    description: string;
-    table: "fin_entries";
-    typeId: number;
-    value: number;
-  }
-  | {
-    assetId: number;
-    bankId: number;
-    date: string;
-    description: string;
-    table: "fin_assets_entries";
-    typeId: number;
-    value: number;
-  }
-): Promise<FinanceEntry | FinanceAssetEntry> {
+  value: number;
+}): Promise<FinanceEntry> {
   const response = await fetch("/api/finances", {
     method: "POST",
     headers: {
@@ -397,28 +348,16 @@ async function createFinanceRecordRequest(input:
   return payload;
 }
 
-async function updateFinanceRecordRequest(input:
-  | {
-    bankId: number;
-    categoryId: number;
-    date: string;
-    description: string;
-    id: number;
-    table: "fin_entries";
-    typeId: number;
-    value: number;
-  }
-  | {
-    assetId: number;
-    bankId: number;
-    date: string;
-    description: string;
-    id: number;
-    table: "fin_assets_entries";
-    typeId: number;
-    value: number;
-  }
-): Promise<FinanceEntry | FinanceAssetEntry> {
+async function updateFinanceRecordRequest(input: {
+  bankId: number;
+  categoryId: number;
+  date: string;
+  description: string;
+  id: number;
+  table: "fin_entries";
+  typeId: number;
+  value: number;
+}): Promise<FinanceEntry> {
   const response = await fetch("/api/finances", {
     method: "PATCH",
     headers: {
@@ -438,7 +377,6 @@ async function updateFinanceRecordRequest(input:
 
 export function FinanceAddItem({
   editingRecord,
-  initialAssets,
   initialSelects,
   onEditingChange,
   onRecordSaved,
@@ -449,7 +387,7 @@ export function FinanceAddItem({
     useState<DeleteDialogState>(null);
   const [successDialogState, setSuccessDialogState] = useState<SuccessDialogState>({
     isOpen: false,
-    launchType: null,
+    transactionType: null,
   });
   const title = (
     <>
@@ -474,12 +412,6 @@ export function FinanceAddItem({
     queryKey: ["finance-selects"],
     queryFn: fetchFinanceSelects,
     initialData: initialSelects,
-  });
-
-  const { data: assetData } = useQuery({
-    queryKey: ["finance-assets"],
-    queryFn: fetchFinanceAssets,
-    initialData: initialAssets,
   });
 
   const createOptionMutation = useMutation({
@@ -535,27 +467,6 @@ export function FinanceAddItem({
     },
   });
 
-  const createAssetMutation = useMutation({
-    mutationFn: createFinanceAssetRequest,
-    onSuccess: (createdAsset) => {
-      queryClient.setQueryData<FinanceAssetOption[]>(
-        ["finance-assets"],
-        (current) => {
-          const base = current ?? initialAssets;
-          const assetsByTicker = new Map(
-            base.map((asset) => [asset.value, asset] as const)
-          );
-
-          assetsByTicker.set(createdAsset.value, createdAsset);
-
-          return Array.from(assetsByTicker.values()).sort((a, b) =>
-            a.label.localeCompare(b.label)
-          );
-        }
-      );
-    },
-  });
-
   const createFinanceRecordMutation = useMutation({
     mutationFn: createFinanceRecordRequest,
     onSuccess: async () => {
@@ -574,97 +485,64 @@ export function FinanceAddItem({
     },
   });
 
-  const deleteAssetMutation = useMutation({
-    mutationFn: deleteFinanceAssetRequest,
-    onSuccess: (_, variables) => {
-      queryClient.setQueryData<FinanceAssetOption[]>(
-        ["finance-assets"],
-        (current) => {
-          const base = current ?? initialAssets;
-
-          return base.filter((asset) => asset.id !== variables.assetId);
-        }
-      );
-    },
-  });
-
-  const launchType = useWatch({
+  const transactionType = useWatch({
     control,
-    name: "launchType",
+    name: "transactionType",
   });
   const amount = useWatch({
     control,
     name: "amount",
   });
-  const isEditing = Boolean(editingRecord);
-  const isEditingRef = useRef(isEditing);
-
-  isEditingRef.current = isEditing;
-  const assetEntryTypeOptions = selectData.assetEntryTypes;
+  const amountIndicatorValue = getSignedAmount(amount ?? 0, transactionType);
   const isAppBusy =
     createFinanceRecordMutation.isPending ||
-    createAssetMutation.isPending ||
     createOptionMutation.isPending ||
     deleteOptionMutation.isPending ||
-    deleteAssetMutation.isPending ||
     updateFinanceRecordMutation.isPending;
 
   useEffect(() => {
-    if (isEditingRef.current) {
+    if (editingRecord) {
       return;
     }
 
-    setValue("type", "");
-  }, [launchType, setValue]);
+    setValue("category", "");
+    setValue("destinationBank", "");
+  }, [editingRecord, setValue, transactionType]);
 
   useEffect(() => {
     if (!editingRecord) {
       return;
     }
 
-    if (editingRecord.table === "fin_entries") {
-      const bankOption = selectData.banks.find(
-        (option) => option.id === editingRecord.bankId
-      );
-      const categoryOption = selectData.entryCategories.find(
-        (option) => option.id === editingRecord.categoryId
-      );
-
-      reset({
-        amount: editingRecord.value,
-        asset: "",
-        bank: bankOption?.value ?? "",
-        category: categoryOption?.value ?? "",
-        date: editingRecord.date.slice(0, 10),
-        description: editingRecord.description,
-        launchType: "fin_entries",
-        type: "",
+    if (editingRecord.table !== "fin_entries") {
+      setDeleteDialogState({
+        mode: "error",
+        title: "Edicao indisponivel",
+        message:
+          "Este modal agora salva lancamentos comuns. Movimentacoes de ativo antigas ainda aparecem na tabela, mas nao podem ser editadas por aqui.",
       });
-    } else {
-      const bankOption = selectData.banks.find(
-        (option) => option.id === editingRecord.bankId
-      );
-      const typeOption = selectData.assetEntryTypes.find(
-        (option) => option.id === editingRecord.typeId
-      );
-      const assetOption = assetData.find(
-        (asset) => asset.id === editingRecord.assetId
-      );
-
-      reset({
-        amount: editingRecord.value,
-        asset: assetOption?.value ?? "",
-        bank: bankOption?.value ?? "",
-        category: "",
-        date: editingRecord.date.slice(0, 10),
-        description: editingRecord.description,
-        launchType: "fin_asset_entries",
-        type: typeOption?.value ?? "",
-      });
+      onEditingChange(null);
+      return;
     }
 
+    const bankOption = selectData.banks.find(
+      (option) => option.id === editingRecord.bankId
+    );
+    const categoryOption = selectData.entryCategories.find(
+      (option) => option.id === editingRecord.categoryId
+    );
+
+    reset({
+      amount: Math.abs(editingRecord.value),
+      bank: bankOption?.value ?? "",
+      category: categoryOption?.value ?? "",
+      date: editingRecord.date.slice(0, 10),
+      description: editingRecord.description,
+      destinationBank: "",
+      transactionType: editingRecord.value > 0 ? "income" : "expense",
+    });
     setIsAddItemOpen(true);
-  }, [assetData, editingRecord, reset, selectData]);
+  }, [editingRecord, onEditingChange, reset, selectData]);
 
   function handleCreateSelectOption(selectName: FinanceSelectName) {
     return async (option: SelectOption) => {
@@ -730,12 +608,6 @@ export function FinanceAddItem({
         });
       }
 
-      if (deleteDialogState?.mode === "asset-confirm") {
-        await deleteAssetMutation.mutateAsync({
-          assetId: deleteDialogState.asset.id,
-        });
-      }
-
       setDeleteDialogState(null);
     } catch (error) {
       const message =
@@ -762,71 +634,38 @@ export function FinanceAddItem({
       setValue("category", input.replacementValue);
       return;
     }
-
-    if (
-      input.selectName === FINANCE_SELECT_NAMES.assetEntryTypes
-    ) {
-      setValue("type", input.replacementValue);
-    }
   }
 
-  async function handleCreateAsset(input: {
-    assetName: string;
-    assetType: string;
-    ticker: string;
-  }) {
-    const selectedType = selectData.assetTypes.find(
-      (option) => option.value === input.assetType
-    );
+  async function ensureSelectOption(
+    selectName: FinanceSelectName,
+    label: string
+  ) {
+    const key = getFinanceSelectKeyByName(selectName);
+    const currentOptions = queryClient.getQueryData<FinanceSelectsData>([
+      "finance-selects",
+    ]) ?? selectData;
+    const existingOption = findSemanticOption(currentOptions[key], [
+      new RegExp(`(^|[\\s_-])${label}($|[\\s_-])`, "i"),
+    ]);
 
-    if (!selectedType) {
-      throw new Error("Selecione um tipo de ativo.");
+    if (existingOption) {
+      return existingOption;
     }
 
-    return createAssetMutation.mutateAsync({
-      name: input.assetName,
-      ticker: input.ticker,
-      typeId: selectedType.id,
+    return createOptionMutation.mutateAsync({
+      selectName,
+      label,
     });
-  }
-
-  function handleDeleteAsset() {
-    return async (asset: FinanceAssetOption) => {
-      try {
-        const preview = await previewFinanceAssetDeletionRequest({
-          assetId: asset.id,
-        });
-
-        setDeleteDialogState({
-          asset,
-          mode: "asset-confirm",
-          preview,
-        });
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Nao foi possivel excluir o ativo.";
-
-        setDeleteDialogState({
-          mode: "error",
-          title: "Nao foi possivel excluir",
-          message,
-        });
-      }
-
-      return false;
-    };
   }
 
   async function onSubmit(data: FinanceFormData) {
     try {
-      if (
-        editingRecord &&
-        data.launchType !==
-          (editingRecord.table === "fin_entries"
-            ? "fin_entries"
-            : "fin_asset_entries")
-      ) {
-        throw new Error("Nao e possivel alterar o tipo de lancamento ao editar.");
+      if (editingRecord && editingRecord.table !== "fin_entries") {
+        throw new Error("Nao e possivel editar movimentacoes de ativo neste modal.");
+      }
+
+      if (editingRecord && data.transactionType === "transfer") {
+        throw new Error("Transferencias criam dois lancamentos e nao podem ser usadas ao editar um lancamento simples.");
       }
 
       const bankOption = selectData.banks.find((option) => option.value === data.bank);
@@ -835,11 +674,55 @@ export function FinanceAddItem({
         throw new Error("Selecione um banco valido.");
       }
 
-      const value = data.amount;
+      const value = getSignedAmount(data.amount, data.transactionType);
       const description = data.description?.trim() ?? "";
       let savedRecord: FinanceChangedRecord | null = null;
 
-      if (data.launchType === "fin_entries") {
+      if (data.transactionType === "transfer") {
+        const destinationBankOption = selectData.banks.find(
+          (option) => option.value === data.destinationBank
+        );
+
+        if (!destinationBankOption) {
+          throw new Error("Selecione um banco de destino valido.");
+        }
+
+        const transferType = await ensureSelectOption(
+          FINANCE_SELECT_NAMES.entryTypes,
+          "Transfer"
+        );
+        const transferCategory = await ensureSelectOption(
+          FINANCE_SELECT_NAMES.entryCategories,
+          "Transfer"
+        );
+        const absoluteValue = Math.abs(data.amount);
+        const transferDescription = description || "Transfer";
+
+        const outgoingRecord = await createFinanceRecordMutation.mutateAsync({
+          bankId: bankOption.id,
+          categoryId: transferCategory.id,
+          date: data.date,
+          description: transferDescription,
+          table: "fin_entries",
+          typeId: transferType.id,
+          value: -absoluteValue,
+        });
+
+        await createFinanceRecordMutation.mutateAsync({
+          bankId: destinationBankOption.id,
+          categoryId: transferCategory.id,
+          date: data.date,
+          description: transferDescription,
+          table: "fin_entries",
+          typeId: transferType.id,
+          value: absoluteValue,
+        });
+
+        savedRecord = {
+          id: outgoingRecord.id,
+          table: "fin_entries",
+        };
+      } else {
         const categoryOption = selectData.entryCategories.find(
           (option) => option.value === data.category
         );
@@ -848,7 +731,10 @@ export function FinanceAddItem({
           throw new Error("Selecione uma categoria valida.");
         }
 
-        const inferredTypeId = resolveEntryTypeId(selectData.entryTypes, value);
+        const inferredTypeId = resolveEntryTypeId(
+          selectData.entryTypes,
+          data.transactionType
+        );
 
         if (editingRecord?.table === "fin_entries") {
           const updatedRecord = await updateFinanceRecordMutation.mutateAsync({
@@ -880,51 +766,6 @@ export function FinanceAddItem({
             table: "fin_entries",
           };
         }
-      } else {
-        const assetOption = assetData.find((asset) => asset.value === data.asset);
-
-        if (!assetOption) {
-          throw new Error("Selecione um ativo valido.");
-        }
-
-        const typeOption = assetEntryTypeOptions.find(
-          (option) => option.value === data.type
-        );
-
-        if (!typeOption) {
-          throw new Error("Selecione um tipo valido.");
-        }
-
-        if (editingRecord?.table === "fin_assets_entries") {
-          const updatedRecord = await updateFinanceRecordMutation.mutateAsync({
-            assetId: assetOption.id,
-            bankId: bankOption.id,
-            date: data.date,
-            description,
-            id: editingRecord.id,
-            table: "fin_assets_entries",
-            typeId: typeOption.id,
-            value,
-          });
-          savedRecord = {
-            id: updatedRecord.id,
-            table: "fin_assets_entries",
-          };
-        } else {
-          const createdRecord = await createFinanceRecordMutation.mutateAsync({
-            assetId: assetOption.id,
-            bankId: bankOption.id,
-            date: data.date,
-            description,
-            table: "fin_assets_entries",
-            typeId: typeOption.id,
-            value,
-          });
-          savedRecord = {
-            id: createdRecord.id,
-            table: "fin_assets_entries",
-          };
-        }
       }
 
       if (savedRecord) {
@@ -933,8 +774,7 @@ export function FinanceAddItem({
 
       reset({
         ...EMPTY_FINANCE_FORM,
-        launchType: data.launchType,
-        type: data.launchType === "fin_asset_entries" ? data.type ?? "" : "",
+        transactionType: data.transactionType,
       });
       setIsAddItemOpen(false);
       onEditingChange(null);
@@ -942,7 +782,7 @@ export function FinanceAddItem({
       if (!editingRecord) {
         setSuccessDialogState({
           isOpen: true,
-          launchType: data.launchType,
+          transactionType: data.transactionType,
         });
       }
     } catch (error) {
@@ -975,36 +815,13 @@ export function FinanceAddItem({
         isLocked={isAppBusy}
         triggerContent={<div className="btn btn-sm">{title}</div>}
         modalTitle={
-          <div className="flex w-full items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              {editingRecord ? <span>Editar lancamento</span> : title}
-            </div>
-
-            <div className="tabs tabs-boxed bg-base-200/40 p-1">
-              <button
-                type="button"
-                className={`tab px-3 text-xs ${launchType === "fin_entries" ? "tab-active" : ""}`}
-                onClick={() => setValue("launchType", "fin_entries")}
-                disabled={isEditing || isAppBusy}
-              >
-                Entry
-              </button>
-              <button
-                type="button"
-                className={`tab px-3 text-xs ${launchType === "fin_asset_entries" ? "tab-active" : ""}`}
-                onClick={() => setValue("launchType", "fin_asset_entries")}
-                disabled={isEditing || isAppBusy}
-              >
-                Asset Entry
-              </button>
-            </div>
+          <div className="flex items-center gap-2">
+            {editingRecord ? <span>Editar lancamento</span> : title}
           </div>
         }
       >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5 py-4">
           <fieldset disabled={isAppBusy} className="space-y-5">
-            <input type="hidden" {...register("launchType")} />
-
             <div className="grid gap-4 md:grid-cols-2">
               <Field label="Data" error={errors.date?.message}>
                 <Controller
@@ -1024,7 +841,7 @@ export function FinanceAddItem({
                   <span className="flex w-full items-center justify-between gap-3">
                     <span>Valor</span>
                     <span
-                      className={getAmountIndicatorClassName(amount ?? 0)}
+                      className={getAmountIndicatorClassName(amountIndicatorValue)}
                       aria-hidden="true"
                     />
                   </span>
@@ -1039,10 +856,12 @@ export function FinanceAddItem({
                       type="text"
                       inputMode="numeric"
                       className="input input-bordered w-full"
-                      placeholder="Ex: 129,90 ou -129,90"
-                      value={formatCentsInput(field.value ?? 0)}
+                      placeholder="Ex: 129,90"
+                      value={formatCentsInput(Math.abs(field.value ?? 0))}
                       onChange={(event) => {
-                        field.onChange(parseMaskedCurrencyToCents(event.target.value));
+                        field.onChange(
+                          Math.abs(parseMaskedCurrencyToCents(event.target.value))
+                        );
                       }}
                       onFocus={(event) => event.target.select()}
                     />
@@ -1059,13 +878,7 @@ export function FinanceAddItem({
               />
             </Field>
 
-            <div
-              className={
-                launchType === "fin_asset_entries"
-                  ? "grid gap-4 md:grid-cols-2"
-                  : "grid gap-4"
-              }
-            >
+            <div className="grid gap-4 md:grid-cols-2">
               <Controller
                 control={control}
                 name="bank"
@@ -1084,52 +897,75 @@ export function FinanceAddItem({
                 )}
               />
 
-              {launchType === "fin_asset_entries" && (
-                <Controller
-                  control={control}
-                  name="type"
-                  render={({ field }) => (
-                    <CreateOptionSelect
-                      label="Tipo"
-                      value={field.value || ""}
-                      options={assetEntryTypeOptions}
-                      onChange={field.onChange}
-                      onCreate={handleCreateSelectOption(
-                        FINANCE_SELECT_NAMES.assetEntryTypes
-                      )}
-                      onDeleteOption={handleDeleteSelectOption(
-                        FINANCE_SELECT_NAMES.assetEntryTypes
-                      )}
-                      placeholder="Selecionar tipo"
-                    />
-                  )}
-                />
-              )}
+              <Field label="Tipo" error={errors.transactionType?.message}>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {TRANSACTION_TYPES.map((option) => (
+                    <label
+                      key={option.value}
+                      className={[
+                        "border-base-300 flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors",
+                        transactionType === option.value
+                          ? "border-primary bg-primary/10"
+                          : "bg-base-100",
+                      ].join(" ")}
+                    >
+                      <input
+                        type="radio"
+                        className="h-4 w-4"
+                        value={option.value}
+                        {...register("transactionType")}
+                      />
+                      <span>{option.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </Field>
             </div>
 
-            {launchType === "fin_entries" ? (
-              <FinanceEntryFields
+            {transactionType === "transfer" ? (
+              <Controller
                 control={control}
-                categoryOptions={selectData.entryCategories}
-                onCreateCategory={handleCreateSelectOption(
-                  FINANCE_SELECT_NAMES.entryCategories
-                )}
-                onDeleteCategory={handleDeleteSelectOption(
-                  FINANCE_SELECT_NAMES.entryCategories
+                name="destinationBank"
+                render={({ field }) => (
+                  <CreateOptionSelect
+                    label="Banco de destino"
+                    value={field.value || ""}
+                    options={selectData.banks}
+                    onChange={field.onChange}
+                    onCreate={handleCreateSelectOption(FINANCE_SELECT_NAMES.banks)}
+                    onDeleteOption={handleDeleteSelectOption(
+                      FINANCE_SELECT_NAMES.banks
+                    )}
+                    placeholder="Selecionar banco de destino"
+                  />
                 )}
               />
             ) : (
-              <FinanceAssetFields
+              <Controller
                 control={control}
-                assetOptions={assetData}
-                assetTypeOptions={selectData.assetTypes}
-                onCreateAsset={handleCreateAsset}
-                onCreateAssetType={handleCreateSelectOption(
-                  FINANCE_SELECT_NAMES.assetTypes
-                )}
-                onDeleteAsset={handleDeleteAsset()}
-                onDeleteAssetType={handleDeleteSelectOption(
-                  FINANCE_SELECT_NAMES.assetTypes
+                name="category"
+                render={({ field }) => (
+                  <CreateOptionSelect
+                    label={
+                      transactionType === "income"
+                        ? "Tipo de renda"
+                        : "Categoria"
+                    }
+                    value={field.value || ""}
+                    options={selectData.entryCategories}
+                    onChange={field.onChange}
+                    onCreate={handleCreateSelectOption(
+                      FINANCE_SELECT_NAMES.entryCategories
+                    )}
+                    onDeleteOption={handleDeleteSelectOption(
+                      FINANCE_SELECT_NAMES.entryCategories
+                    )}
+                    placeholder={
+                      transactionType === "income"
+                        ? "Selecionar tipo de renda"
+                        : "Selecionar categoria"
+                    }
+                  />
                 )}
               />
             )}
@@ -1147,15 +983,8 @@ export function FinanceAddItem({
         </form>
 
         <ConfirmDialog
-          isOpen={
-            deleteDialogState?.mode === "confirm" ||
-          deleteDialogState?.mode === "asset-confirm"
-          }
-          title={
-            deleteDialogState?.mode === "asset-confirm"
-              ? "Excluir ativo"
-              : "Excluir opcao"
-          }
+          isOpen={deleteDialogState?.mode === "confirm"}
+          title="Excluir opcao"
           confirmLabel="Excluir"
           confirmDisabled={
             deleteDialogState?.mode === "confirm" &&
@@ -1163,7 +992,7 @@ export function FinanceAddItem({
             !deleteDialogState.replacementValue
           }
           confirmVariant="danger"
-          isSubmitting={deleteOptionMutation.isPending || deleteAssetMutation.isPending}
+          isSubmitting={deleteOptionMutation.isPending}
           onClose={() => setDeleteDialogState(null)}
           onConfirm={() => void handleConfirmDeleteOption()}
         >
@@ -1213,20 +1042,6 @@ export function FinanceAddItem({
               )}
             </div>
           )}
-          {deleteDialogState?.mode === "asset-confirm" && (
-            <div className="space-y-3">
-              <p>
-                Tem certeza que deseja excluir o ativo{" "}
-                <span className="font-semibold">
-                  &quot;{deleteDialogState.preview.optionLabel}&quot;
-                </span>
-                ?
-              </p>
-              <p className="text-base-content/70 text-sm">
-                Essa acao remove o ativo da sua lista para novos lancamentos.
-              </p>
-            </div>
-          )}
         </ConfirmDialog>
 
         <ConfirmDialog
@@ -1251,17 +1066,17 @@ export function FinanceAddItem({
         onClose={() =>
           setSuccessDialogState({
             isOpen: false,
-            launchType: null,
+            transactionType: null,
           })
         }
         onConfirm={() => {
           reset({
             ...EMPTY_FINANCE_FORM,
-            launchType: successDialogState.launchType ?? "fin_entries",
+            transactionType: successDialogState.transactionType ?? "expense",
           });
           setSuccessDialogState({
             isOpen: false,
-            launchType: null,
+            transactionType: null,
           });
           setIsAddItemOpen(true);
         }}

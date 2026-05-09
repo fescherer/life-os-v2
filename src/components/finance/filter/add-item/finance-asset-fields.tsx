@@ -9,12 +9,15 @@ import {
 } from "@/components/create-option-select";
 import type { FinanceAssetOption } from "@/queries/finances/assets";
 import type { FinanceSelectOption } from "@/types/finance-selects";
-import { FinanceFormData } from ".";
 import { CreateAsset, type CreateAssetFormData } from "./create-asset";
+
+type FinanceAssetFieldsFormData = {
+  asset: string;
+};
 
 type Props = {
   assetOptions: FinanceAssetOption[];
-  control: Control<FinanceFormData>;
+  control: Control<FinanceAssetFieldsFormData>;
   assetTypeOptions: FinanceSelectOption[];
   onCreateAsset: (input: {
     assetName: string;
