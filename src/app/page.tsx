@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { SELECT_OPTIONS } from "@/lib/selects-options";
 import { DB_TABLES, POSSIBLE_TYPES } from "@/lib/schema";
-import { DB_ROWS } from "@/lib/rows";
+import { DB_ROWS, DB_ROWS_VALUES } from "@/lib/rows";
+import { supabase } from "@/lib/supabase";
 
 type DatabaseId = (typeof DB_TABLES)[number]["id"];
 type CellValue = string | number | null;
@@ -61,8 +62,22 @@ export default function Home() {
   const [activeId, setActiveId] = useState<DatabaseId>(DB_TABLES[0].id);
 
   const active = DB_TABLES.find((db) => db.id === activeId) ?? DB_TABLES[0];
+  const activeRowIds = new Set(
+    DB_ROWS.filter((row) => row.table_id === active.id).map((row) => row.id),
+  );
 
-  const tableRows = DB_ROWS.filter((cell) => cell.table_id === active.id).reduce<
+  async function loginWithGoogle() {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+  }
+
+  const tableRows = DB_ROWS_VALUES.filter((cell) =>
+    activeRowIds.has(cell.row_id),
+  ).reduce<
     Record<number, Record<string, CellValue>>
   >((acc, cell) => {
     acc[cell.row_id] ??= {};
@@ -76,7 +91,16 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-zinc-100 p-6 text-zinc-950">
       <section className="mx-auto max-w-5xl">
-        <h1 className="text-2xl font-semibold">Life OS</h1>
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-2xl font-semibold">Life OS</h1>
+
+          <button
+            onClick={loginWithGoogle}
+            className="rounded border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          >
+            Login with Google
+          </button>
+        </div>
 
         <div className="mt-6 flex gap-2 border-b border-zinc-300">
           {DB_TABLES.map((db) => (

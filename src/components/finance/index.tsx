@@ -40,7 +40,7 @@ export function DataTable<TData, TValue>({
       
   // TanStack Table returns methods that React Compiler cannot safely memoize.
   // Keep this table instance local to the component.
-  // eslint-disable-next-line react-hooks/incompatible-library
+   
   const table = useReactTable({
     data,
     columns,

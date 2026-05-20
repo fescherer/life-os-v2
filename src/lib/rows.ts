@@ -3,77 +3,81 @@ export const DB_ROWS = [
     id: 1,
     created_at: "2024-01-01T00:00:00.000Z",
     updated_at: "2024-01-01T00:00:00.000Z",
-    position: 0,
     table_id: "finances_entries",
-    column_id: "date",
+    position: 0,
+  },
+  {
+    id: 2,
+    created_at: "2024-01-02T00:00:00.000Z",
+    updated_at: "2024-01-02T00:00:00.000Z",
+    table_id: "assets_entries",
+    position: 0,
+  },
+]
+
+
+export const DB_ROWS_VALUES = [
+  {
+    id: 1,
     row_id: 1,
+    column_id: "date",
     value_numeric: null,
     value_string: '2024-01-01',
   },
   {
     id: 2,
-    created_at: "2024-01-01T00:00:00.000Z",
-    updated_at: "2024-01-01T00:00:00.000Z",
-    position: 1,
-    table_id: "finances_entries",
-    column_id: "amount",
     row_id: 1,
+    column_id: "amount",
     value_numeric: 10000,
     value_string: null,
   },
   {
     id: 3,
-    created_at: "2024-01-01T00:00:00.000Z",
-    updated_at: "2024-01-01T00:00:00.000Z",
-    position: 2,
-    table_id: "finances_entries",
-    column_id: "description",
     row_id: 1,
+    column_id: "description",
     value_numeric: null,
     value_string: 'salario',
   },
   {
     id: 4,
-    created_at: "2024-01-01T00:00:00.000Z",
-    updated_at: "2024-01-01T00:00:00.000Z",
-    position: 3,
-    table_id: "finances_entries",
-    column_id: "bank",
     row_id: 1,
+    column_id: "bank",
     value_numeric: 1,
     value_string: null,
   },
   {
     id: 5,
-    created_at: "2024-01-01T00:00:00.000Z",
-    updated_at: "2024-01-01T00:00:00.000Z",
-    position: 4,
-    table_id: "finances_entries",
-    column_id: "type",
     row_id: 1,
+    column_id: "type",
     value_numeric: 5,
     value_string: null,
   },
+
   {
     id: 6,
-    created_at: "2024-01-02T00:00:00.000Z",
-    updated_at: "2024-01-02T00:00:00.000Z",
-    position: 0,
-    table_id: "assets_entries",
+    row_id: 2,
     column_id: "date",
-    row_id: 1,
     value_numeric: null,
     value_string: '2024-01-02',
   },
   {
     id: 7,
-    created_at: "2024-01-02T00:00:00.000Z",
-    updated_at: "2024-01-02T00:00:00.000Z",
-    position: 1,
-    table_id: "assets_entries",
+    row_id: 2,
     column_id: "amount",
-    row_id: 1,
     value_numeric: 5000,
     value_string: null,
+  }
+]
+
+
+
+export const example = [
+  {
+    table_id: "finances_entries",
+    date: '2024-01-01',
+    amount: 10000,
+    description: 'salario',
+    bank: 1,
+    type: 5,
   }
 ]
