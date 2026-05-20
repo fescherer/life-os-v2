@@ -1,20 +1,21 @@
-import { DataTable } from "@/components/finance";
-import { payments } from "@/lib/data";
-import { columns } from "@/lib/data-columns";
+import { DataTable } from "@/components/data-table";
 import { getTableRows } from "@/lib/db-fn/get";
+import { financeEntryColumns } from "@/lib/table-columns";
 import { FinanceEntry } from "@/types/finance";
 
 export default async function FinancePage() {
-
   const financeEntries = await getTableRows<FinanceEntry>(
     "finances_entries"
   );
 
-  console.log(financeEntries)
-
   return (
     <div className="p-4">
-      <DataTable columns={columns} data={payments} />
+      <DataTable
+        columns={financeEntryColumns}
+        data={financeEntries}
+        filterColumn="description"
+        filterPlaceholder="Filter descriptions..."
+      />
     </div>
   )
 }
