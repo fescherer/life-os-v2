@@ -1,0 +1,29 @@
+"use client";
+
+import { DataTable } from "@/components/data-table";
+import { getFinanceEntryColumns } from "@/lib/table-columns";
+import { FinanceEntry } from "@/types/finance";
+import { SelectOption } from "@/types/select-option";
+import { RowWithId } from "@/types/table";
+import { useMemo } from "react";
+
+type FinanceTableProps = {
+  entries: RowWithId<FinanceEntry>[];
+  selectOptions: SelectOption[];
+};
+
+export function FinanceTable({ entries, selectOptions }: FinanceTableProps) {
+  const columns = useMemo(
+    () => getFinanceEntryColumns(selectOptions),
+    [selectOptions],
+  );
+
+  return (
+    <DataTable
+      columns={columns}
+      data={entries}
+      filterColumn="description"
+      filterPlaceholder="Filter descriptions..."
+    />
+  );
+}

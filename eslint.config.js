@@ -15,11 +15,17 @@ export default defineConfig([
 
   {
     settings: {
+      react: {
+        version: "detect",
+      },
       tailwindcss: {
         whitelist: [
           "^bg-(base|primary|secondary|accent|neutral|info|success|warning|error)(-.*)?$",
           "border-(base|primary|secondary|accent|neutral|info|success|warning|error)(-.*)?$",
           "text-(base|primary|secondary|accent|neutral|info|success|warning|error)(-.*)?$",
+          "^bg-(background|foreground|card|popover|muted|accent|secondary|primary|destructive|sidebar|input)(/.*)?$",
+          "^border-(border|input|ring|destructive|sidebar|sidebar-border)(/.*)?$",
+          "^text-(foreground|card-foreground|popover-foreground|muted-foreground|accent-foreground|secondary-foreground|primary-foreground|destructive|sidebar-foreground|sidebar-accent-foreground|sidebar-primary-foreground)(/.*)?$",
           "^tooltip(-.*)?$",
           "^btn(-.*)?$",
           "^card(-.*)?$",

@@ -89,7 +89,7 @@ export default function Home() {
   }, {});
 
   return (
-    <main className="min-h-screen bg-zinc-100 p-6 text-zinc-950">
+    <main className="p-6">
       <section className="mx-auto max-w-5xl">
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-semibold">Life OS</h1>

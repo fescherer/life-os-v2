@@ -24,18 +24,6 @@ export const SELECT_OPTIONS = [
     color: "#F58220",
   },
   {
-    id: 3,
-    selectIdentifier: "bank",
-    value: "Sicredi",
-    color: "#009739",
-  },
-  {
-    id: 4,
-    selectIdentifier: "bank",
-    value: "Caixa",
-    color: "#F58220",
-  },
-  {
     id: 5,
     selectIdentifier: "entry_type",
     value: "Income",
