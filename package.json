@@ -11,6 +11,7 @@
     "update-supabase-types": "supabase gen types typescript --project-id kaodfwuxdrbpyzpyujry > src/types/supabase.ts"
   },
   "dependencies": {
+    "@base-ui/react": "^1.5.0",
     "@hookform/resolvers": "^5.2.2",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.0",
