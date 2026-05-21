@@ -1,8 +1,16 @@
-/* eslint-disable tailwindcss/no-custom-classname */
 "use client";
 
 import { createFinanceEntry } from "@/app/finance/actions";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import {
   Dialog,
   DialogClose,
@@ -14,8 +22,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 import { SelectOption } from "@/types/select-option";
-import { Plus } from "lucide-react";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 type FinanceEntryFormProps = {
@@ -24,6 +39,9 @@ type FinanceEntryFormProps = {
 
 export function FinanceEntryForm({ selectOptions }: FinanceEntryFormProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [date, setDate] = useState<Date>();
+  const [bank, setBank] = useState<string | null>(null);
+  const [type, setType] = useState<string | null>(null);
 
   const banks = useMemo(
     () =>
@@ -37,10 +55,15 @@ export function FinanceEntryForm({ selectOptions }: FinanceEntryFormProps) {
       ),
     [selectOptions],
   );
+  const selectedBank = banks.find((option) => String(option.id) === bank);
+  const selectedType = entryTypes.find((option) => String(option.id) === type);
   const canCreate = banks.length > 0 && entryTypes.length > 0;
 
   async function submit(formData: FormData) {
     await createFinanceEntry(formData);
+    setDate(undefined);
+    setBank(null);
+    setType(null);
     setIsOpen(false);
   }
 
@@ -67,7 +90,33 @@ export function FinanceEntryForm({ selectOptions }: FinanceEntryFormProps) {
               <div className="grid gap-3">
                 <label className="block text-sm font-medium">
                   Date
-                  <Input name="date" type="date" className="mt-1" required />
+                  <input
+                    name="date"
+                    type="hidden"
+                    value={date ? format(date, "yyyy-MM-dd") : ""}
+                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        data-empty={!date}
+                        className={cn(
+                          "mt-1 w-full justify-start text-left font-normal data-[empty=true]:text-muted-foreground",
+                        )}
+                      >
+                        <CalendarIcon className="size-4" />
+                        {date ? format(date, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </label>
 
                 <label className="block text-sm font-medium">
@@ -88,32 +137,76 @@ export function FinanceEntryForm({ selectOptions }: FinanceEntryFormProps) {
 
                 <label className="block text-sm font-medium">
                   Bank
-                  <select
+                  <Combobox
                     name="bank"
-                    className="border-input bg-input/30 focus-visible:border-ring focus-visible:ring-ring/50 mt-1 h-9 w-full rounded-4xl border px-3 text-sm outline-none focus-visible:ring-[3px]"
+                    value={bank}
+                    onValueChange={setBank}
+                    itemToStringLabel={(value) =>
+                      banks.find((option) => String(option.id) === value)
+                        ?.value ?? ""
+                    }
                     required
                   >
-                    {banks.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.value}
-                      </option>
-                    ))}
-                  </select>
+                    <ComboboxInput
+                      className="mt-1 w-full"
+                      placeholder="Select bank"
+                      showClear
+                    />
+                    <ComboboxContent>
+                      <ComboboxEmpty>No bank found.</ComboboxEmpty>
+                      <ComboboxList>
+                        {banks.map((option) => (
+                          <ComboboxItem
+                            key={option.id}
+                            value={String(option.id)}
+                          >
+                            <span
+                              className="border-border size-3 rounded-full border"
+                              style={{ backgroundColor: option.color }}
+                            />
+                            {option.value}
+                          </ComboboxItem>
+                        ))}
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
                 </label>
 
                 <label className="block text-sm font-medium">
                   Type
-                  <select
+                  <Combobox
                     name="type"
-                    className="border-input bg-input/30 focus-visible:border-ring focus-visible:ring-ring/50 mt-1 h-9 w-full rounded-4xl border px-3 text-sm outline-none focus-visible:ring-[3px]"
+                    value={type}
+                    onValueChange={setType}
+                    itemToStringLabel={(value) =>
+                      entryTypes.find((option) => String(option.id) === value)
+                        ?.value ?? ""
+                    }
                     required
                   >
-                    {entryTypes.map((option) => (
-                      <option key={option.id} value={option.id}>
-                        {option.value}
-                      </option>
-                    ))}
-                  </select>
+                    <ComboboxInput
+                      className="mt-1 w-full"
+                      placeholder="Select type"
+                      showClear
+                    />
+                    <ComboboxContent>
+                      <ComboboxEmpty>No type found.</ComboboxEmpty>
+                      <ComboboxList>
+                        {entryTypes.map((option) => (
+                          <ComboboxItem
+                            key={option.id}
+                            value={String(option.id)}
+                          >
+                            <span
+                              className="border-border size-3 rounded-full border"
+                              style={{ backgroundColor: option.color }}
+                            />
+                            {option.value}
+                          </ComboboxItem>
+                        ))}
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
                 </label>
               </div>
 
@@ -123,7 +216,12 @@ export function FinanceEntryForm({ selectOptions }: FinanceEntryFormProps) {
                     Cancel
                   </Button>
                 </DialogClose>
-                <Button type="submit">Create</Button>
+                <Button
+                  type="submit"
+                  disabled={!date || !selectedBank || !selectedType}
+                >
+                  Create
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
