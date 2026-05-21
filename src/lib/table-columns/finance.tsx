@@ -9,11 +9,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { FinanceEntry } from "@/types/finance";
 import { SelectOption } from "@/types/select-option";
 import { RowWithId } from "@/types/table";
-import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { Column, ColumnDef } from "@tanstack/react-table";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
 export type FinanceEntryRow = RowWithId<FinanceEntry>;
 
@@ -69,6 +70,57 @@ function getSelectOption(
   );
 }
 
+function getSelectOptionValue(
+  selectOptions: SelectOption[],
+  selectIdentifier: string,
+  id: number,
+) {
+  return getSelectOption(selectOptions, selectIdentifier, id)?.value ?? "";
+}
+
+function SortableHeader({
+  column,
+  label,
+  align = "left",
+}: {
+  column: Column<FinanceEntryRow, unknown>;
+  label: string;
+  align?: "left" | "right" | "center";
+}) {
+  const sortDirection = column.getIsSorted();
+  const sortIndex = column.getSortIndex();
+  const SortIcon =
+    sortDirection === "asc"
+      ? ArrowUp
+      : sortDirection === "desc"
+        ? ArrowDown
+        : ArrowUpDown;
+
+  return (
+    <div className={cn("flex", align === "right" && "justify-end")}>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={column.getToggleSortingHandler()}
+        className={cn(
+          "-mx-2 px-2",
+          sortDirection && "text-primary hover:text-primary",
+        )}
+      >
+        {label}
+        <SortIcon
+          className={cn(sortDirection ? "text-primary" : "text-muted-foreground")}
+        />
+        {sortIndex > -1 ? (
+          <span className="bg-primary/10 text-primary flex size-4 items-center justify-center rounded-full text-[10px] font-semibold">
+            {sortIndex + 1}
+          </span>
+        ) : null}
+      </Button>
+    </div>
+  );
+}
+
 function getBadgeTextColor(color: string) {
   const hex = color.replace("#", "");
 
@@ -111,24 +163,26 @@ export function getFinanceEntryColumns(
   return [
     {
       accessorKey: "date",
-      header: "Data",
+      size: 140,
+      header: ({ column }) => (
+        <SortableHeader column={column} label="Data" />
+      ),
       cell: ({ row }) => <DateCell value={row.original.date} />,
     },
     {
-      accessorKey: "description",
-      header: ({ column }) => (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Descricao
-          <ArrowUpDown />
-        </Button>
-      ),
-    },
-    {
       accessorKey: "bank",
-      header: "Banco",
+      size: 150,
+      header: ({ column }) => (
+        <SortableHeader column={column} label="Banco" />
+      ),
+      sortingFn: (rowA, rowB) =>
+        getSelectOptionValue(
+          selectOptions,
+          "bank",
+          rowA.original.bank,
+        ).localeCompare(
+          getSelectOptionValue(selectOptions, "bank", rowB.original.bank),
+        ),
       cell: ({ row }) => (
         <SelectBadge
           option={getSelectOption(selectOptions, "bank", row.original.bank)}
@@ -138,7 +192,22 @@ export function getFinanceEntryColumns(
     },
     {
       accessorKey: "type",
-      header: "Tipo",
+      size: 150,
+      header: ({ column }) => (
+        <SortableHeader column={column} label="Tipo"  />
+      ),
+      sortingFn: (rowA, rowB) =>
+        getSelectOptionValue(
+          selectOptions,
+          "entry_type",
+          rowA.original.type,
+        ).localeCompare(
+          getSelectOptionValue(
+            selectOptions,
+            "entry_type",
+            rowB.original.type,
+          ),
+        ),
       cell: ({ row }) => (
         <SelectBadge
           option={getSelectOption(
@@ -152,7 +221,10 @@ export function getFinanceEntryColumns(
     },
     {
       accessorKey: "amount",
-      header: () => <div className="text-right">Valor</div>,
+      size: 140,
+      header: ({ column }) => (
+        <SortableHeader column={column} label="Valor" align="right" />
+      ),
       cell: ({ row }) => (
         <div className="text-right font-medium">
           {formatCurrency(row.original.amount)}
@@ -160,7 +232,24 @@ export function getFinanceEntryColumns(
       ),
     },
     {
+      accessorKey: "description",
+      size: 360,
+      header: ({ column }) => (
+        <SortableHeader column={column} label="Descricao" align="right" />
+      ),
+      cell: ({ row }) => (
+        <div
+          dir="rtl"
+          className="max-w-full truncate text-right"
+          title={row.original.description}
+        >
+          {row.original.description}
+        </div>
+      ),
+    },
+    {
       id: "actions",
+      size: 72,
       enableHiding: false,
       cell: ({ row }) => (
         <FinanceRowActions

@@ -7,6 +7,7 @@ import {
   updateFinanceEntry,
 } from "@/app/finance/actions";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
+import { FinanceEntryFields } from "@/components/finance-entry-fields";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,7 +25,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import {
   Tooltip,
   TooltipContent,
@@ -35,7 +35,7 @@ import { FinanceEntry } from "@/types/finance";
 import { SelectOption } from "@/types/select-option";
 import { RowWithId } from "@/types/table";
 import { Copy, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type FinanceRowActionsProps = {
   entry: RowWithId<FinanceEntry>;
@@ -43,6 +43,16 @@ type FinanceRowActionsProps = {
 };
 
 type ConfirmationAction = "save" | "duplicate" | "delete";
+
+const FINANCE_ROW_EDIT_EVENT = "finance-row-edit";
+
+export function openFinanceRowEdit(entryId: string) {
+  window.dispatchEvent(
+    new CustomEvent<{ entryId: string }>(FINANCE_ROW_EDIT_EVENT, {
+      detail: { entryId },
+    }),
+  );
+}
 
 function formatDateTime(value: string) {
   return new Intl.DateTimeFormat("pt-BR", {
@@ -183,15 +193,27 @@ export function FinanceRowActions({
 }: FinanceRowActionsProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isEditReady, setIsEditReady] = useState(true);
   const [confirmationAction, setConfirmationAction] =
     useState<ConfirmationAction | null>(null);
 
-  const banks = selectOptions.filter(
-    (option) => option.select_identifier === "bank",
-  );
-  const entryTypes = selectOptions.filter(
-    (option) => option.select_identifier === "entry_type",
-  );
+  useEffect(() => {
+    function handleEditEvent(event: Event) {
+      if (!(event instanceof CustomEvent)) {
+        return;
+      }
+
+      if (event.detail?.entryId === entry.id) {
+        setIsEditOpen(true);
+      }
+    }
+
+    window.addEventListener(FINANCE_ROW_EDIT_EVENT, handleEditEvent);
+
+    return () => {
+      window.removeEventListener(FINANCE_ROW_EDIT_EVENT, handleEditEvent);
+    };
+  }, [entry.id]);
 
   async function submit(formData: FormData) {
     await updateFinanceEntry(formData);
@@ -264,72 +286,11 @@ export function FinanceRowActions({
         <form ref={formRef} action={submit} className="grid gap-4">
           <input type="hidden" name="id" value={entry.id} />
 
-          <div className="grid gap-3">
-            <label className="block text-sm font-medium">
-              Data
-              <Input
-                name="date"
-                type="date"
-                defaultValue={entry.date}
-                className="mt-1"
-                required
-              />
-            </label>
-
-            <label className="block text-sm font-medium">
-              Descrição
-              <Input
-                name="description"
-                defaultValue={entry.description}
-                className="mt-1"
-                required
-              />
-            </label>
-
-            <label className="block text-sm font-medium">
-              Valor
-              <Input
-                name="amount"
-                type="number"
-                step="0.01"
-                defaultValue={entry.amount}
-                className="mt-1"
-                required
-              />
-            </label>
-
-            <label className="block text-sm font-medium">
-              Banco
-              <select
-                name="bank"
-                defaultValue={entry.bank}
-                className="border-input bg-input/30 focus-visible:border-ring focus-visible:ring-ring/50 mt-1 h-9 w-full rounded-4xl border px-3 text-sm outline-none focus-visible:ring-[3px]"
-                required
-              >
-                {banks.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.value}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="block text-sm font-medium">
-              Tipo
-              <select
-                name="type"
-                defaultValue={entry.type}
-                className="border-input bg-input/30 focus-visible:border-ring focus-visible:ring-ring/50 mt-1 h-9 w-full rounded-4xl border px-3 text-sm outline-none focus-visible:ring-[3px]"
-                required
-              >
-                {entryTypes.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.value}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+          <FinanceEntryFields
+            selectOptions={selectOptions}
+            defaultEntry={entry}
+            onReadyChange={setIsEditReady}
+          />
 
           <DialogFooter>
             <DialogClose asChild>
@@ -337,7 +298,7 @@ export function FinanceRowActions({
                 Cancelar
               </Button>
             </DialogClose>
-            <Button type="button" onClick={confirmSave}>
+            <Button type="button" onClick={confirmSave} disabled={!isEditReady}>
               Salvar
             </Button>
           </DialogFooter>

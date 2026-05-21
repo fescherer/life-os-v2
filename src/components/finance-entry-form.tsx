@@ -1,16 +1,8 @@
 "use client";
 
 import { createFinanceEntry } from "@/app/finance/actions";
+import { FinanceEntryFields } from "@/components/finance-entry-fields";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@/components/ui/combobox";
 import {
   Dialog,
   DialogClose,
@@ -21,16 +13,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
 import { SelectOption } from "@/types/select-option";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 
 type FinanceEntryFormProps = {
@@ -39,9 +23,8 @@ type FinanceEntryFormProps = {
 
 export function FinanceEntryForm({ selectOptions }: FinanceEntryFormProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [date, setDate] = useState<Date>();
-  const [bank, setBank] = useState<SelectOption | null>(null);
-  const [type, setType] = useState<SelectOption | null>(null);
+  const [isReady, setIsReady] = useState(false);
+  const [resetKey, setResetKey] = useState(0);
 
   const banks = useMemo(
     () =>
@@ -59,9 +42,7 @@ export function FinanceEntryForm({ selectOptions }: FinanceEntryFormProps) {
 
   async function submit(formData: FormData) {
     await createFinanceEntry(formData);
-    setDate(undefined);
-    setBank(null);
-    setType(null);
+    setResetKey((current) => current + 1);
     setIsOpen(false);
   }
 
@@ -85,120 +66,11 @@ export function FinanceEntryForm({ selectOptions }: FinanceEntryFormProps) {
             </DialogHeader>
 
             <form action={submit} className="grid gap-4">
-              <div className="grid gap-3">
-                <label className="block text-sm font-medium">
-                  Date
-                  <input
-                    name="date"
-                    type="hidden"
-                    value={date ? format(date, "yyyy-MM-dd") : ""}
-                  />
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        data-empty={!date}
-                        className={cn(
-                          "mt-1 w-full justify-start text-left font-normal data-[empty=true]:text-muted-foreground",
-                        )}
-                      >
-                        <CalendarIcon className="size-4" />
-                        {date ? format(date, "PPP") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={setDate}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </label>
-
-                <label className="block text-sm font-medium">
-                  Description
-                  <Input name="description" className="mt-1" required />
-                </label>
-
-                <label className="block text-sm font-medium">
-                  Amount
-                  <Input
-                    name="amount"
-                    type="number"
-                    step="0.01"
-                    className="mt-1"
-                    required
-                  />
-                </label>
-
-                <label className="block text-sm font-medium">
-                  Bank
-                  <Combobox
-                    name="bank"
-                    items={banks}
-                    value={bank}
-                    onValueChange={setBank}
-                    itemToStringLabel={(option) => option.value}
-                    itemToStringValue={(option) => String(option.id)}
-                    required
-                  >
-                    <ComboboxInput
-                      className="mt-1 w-full"
-                      placeholder="Select bank"
-                      showClear
-                    />
-                    <ComboboxContent>
-                      <ComboboxEmpty>No bank found.</ComboboxEmpty>
-                      <ComboboxList>
-                        {(option: SelectOption) => (
-                          <ComboboxItem key={option.id} value={option}>
-                            <span
-                              className="border-border size-3 rounded-full border"
-                              style={{ backgroundColor: option.color }}
-                            />
-                            {option.value}
-                          </ComboboxItem>
-                        )}
-                      </ComboboxList>
-                    </ComboboxContent>
-                  </Combobox>
-                </label>
-
-                <label className="block text-sm font-medium">
-                  Type
-                  <Combobox
-                    name="type"
-                    items={entryTypes}
-                    value={type}
-                    onValueChange={setType}
-                    itemToStringLabel={(option) => option.value}
-                    itemToStringValue={(option) => String(option.id)}
-                    required
-                  >
-                    <ComboboxInput
-                      className="mt-1 w-full"
-                      placeholder="Select type"
-                      showClear
-                    />
-                    <ComboboxContent>
-                      <ComboboxEmpty>No type found.</ComboboxEmpty>
-                      <ComboboxList>
-                        {(option: SelectOption) => (
-                          <ComboboxItem key={option.id} value={option}>
-                            <span
-                              className="border-border size-3 rounded-full border"
-                              style={{ backgroundColor: option.color }}
-                            />
-                            {option.value}
-                          </ComboboxItem>
-                        )}
-                      </ComboboxList>
-                    </ComboboxContent>
-                  </Combobox>
-                </label>
-              </div>
+              <FinanceEntryFields
+                key={resetKey}
+                selectOptions={selectOptions}
+                onReadyChange={setIsReady}
+              />
 
               <DialogFooter>
                 <DialogClose asChild>
@@ -208,7 +80,7 @@ export function FinanceEntryForm({ selectOptions }: FinanceEntryFormProps) {
                 </DialogClose>
                 <Button
                   type="submit"
-                  disabled={!date || !bank || !type}
+                  disabled={!isReady}
                 >
                   Create
                 </Button>

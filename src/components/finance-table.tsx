@@ -1,6 +1,7 @@
 "use client";
 
 import { DataTable } from "@/components/data-table";
+import { openFinanceRowEdit } from "@/components/finance-row-actions";
 import { getFinanceEntryColumns } from "@/lib/table-columns";
 import { FinanceEntry } from "@/types/finance";
 import { SelectOption } from "@/types/select-option";
@@ -24,6 +25,7 @@ export function FinanceTable({ entries, selectOptions }: FinanceTableProps) {
       data={entries}
       filterColumn="description"
       filterPlaceholder="Filter descriptions..."
+      onRowDoubleClick={(entry) => openFinanceRowEdit(entry.id)}
     />
   );
 }

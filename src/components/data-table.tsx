@@ -35,6 +35,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   filterColumn?: string;
   filterPlaceholder?: string;
+  onRowDoubleClick?: (row: TData) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -42,6 +43,7 @@ export function DataTable<TData, TValue>({
   data,
   filterColumn,
   filterPlaceholder = "Filter...",
+  onRowDoubleClick,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -58,6 +60,8 @@ export function DataTable<TData, TValue>({
     getPaginationRowModel: getPaginationRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
+    enableMultiSort: true,
+    isMultiSortEvent: () => true,
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     state: {
@@ -92,7 +96,7 @@ export function DataTable<TData, TValue>({
 
       <div className="bg-background flex min-h-[42rem] flex-col overflow-hidden rounded-md border">
         <div className="flex-1 overflow-hidden">
-          <Table>
+          <Table className="table-fixed">
             <TableHeader className="bg-muted/40">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
@@ -100,7 +104,10 @@ export function DataTable<TData, TValue>({
                   className="bg-muted/40 hover:bg-muted/40"
                 >
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
+                    <TableHead
+                      key={header.id}
+                      style={{ width: header.getSize() }}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -118,9 +125,30 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    onDoubleClick={(event) => {
+                      if (!onRowDoubleClick) {
+                        return;
+                      }
+
+                      const target = event.target;
+
+                      if (
+                        target instanceof HTMLElement &&
+                        target.closest(
+                          "button, a, input, select, textarea, [role='button']",
+                        )
+                      ) {
+                        return;
+                      }
+
+                      onRowDoubleClick(row.original);
+                    }}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell key={cell.id}>
+                      <TableCell
+                        key={cell.id}
+                        style={{ width: cell.column.getSize() }}
+                      >
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),
