@@ -40,8 +40,8 @@ type FinanceEntryFormProps = {
 export function FinanceEntryForm({ selectOptions }: FinanceEntryFormProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<Date>();
-  const [bank, setBank] = useState<string | null>(null);
-  const [type, setType] = useState<string | null>(null);
+  const [bank, setBank] = useState<SelectOption | null>(null);
+  const [type, setType] = useState<SelectOption | null>(null);
 
   const banks = useMemo(
     () =>
@@ -55,8 +55,6 @@ export function FinanceEntryForm({ selectOptions }: FinanceEntryFormProps) {
       ),
     [selectOptions],
   );
-  const selectedBank = banks.find((option) => String(option.id) === bank);
-  const selectedType = entryTypes.find((option) => String(option.id) === type);
   const canCreate = banks.length > 0 && entryTypes.length > 0;
 
   async function submit(formData: FormData) {
@@ -139,12 +137,11 @@ export function FinanceEntryForm({ selectOptions }: FinanceEntryFormProps) {
                   Bank
                   <Combobox
                     name="bank"
+                    items={banks}
                     value={bank}
                     onValueChange={setBank}
-                    itemToStringLabel={(value) =>
-                      banks.find((option) => String(option.id) === value)
-                        ?.value ?? ""
-                    }
+                    itemToStringLabel={(option) => option.value}
+                    itemToStringValue={(option) => String(option.id)}
                     required
                   >
                     <ComboboxInput
@@ -155,18 +152,15 @@ export function FinanceEntryForm({ selectOptions }: FinanceEntryFormProps) {
                     <ComboboxContent>
                       <ComboboxEmpty>No bank found.</ComboboxEmpty>
                       <ComboboxList>
-                        {banks.map((option) => (
-                          <ComboboxItem
-                            key={option.id}
-                            value={String(option.id)}
-                          >
+                        {(option: SelectOption) => (
+                          <ComboboxItem key={option.id} value={option}>
                             <span
                               className="border-border size-3 rounded-full border"
                               style={{ backgroundColor: option.color }}
                             />
                             {option.value}
                           </ComboboxItem>
-                        ))}
+                        )}
                       </ComboboxList>
                     </ComboboxContent>
                   </Combobox>
@@ -176,12 +170,11 @@ export function FinanceEntryForm({ selectOptions }: FinanceEntryFormProps) {
                   Type
                   <Combobox
                     name="type"
+                    items={entryTypes}
                     value={type}
                     onValueChange={setType}
-                    itemToStringLabel={(value) =>
-                      entryTypes.find((option) => String(option.id) === value)
-                        ?.value ?? ""
-                    }
+                    itemToStringLabel={(option) => option.value}
+                    itemToStringValue={(option) => String(option.id)}
                     required
                   >
                     <ComboboxInput
@@ -192,18 +185,15 @@ export function FinanceEntryForm({ selectOptions }: FinanceEntryFormProps) {
                     <ComboboxContent>
                       <ComboboxEmpty>No type found.</ComboboxEmpty>
                       <ComboboxList>
-                        {entryTypes.map((option) => (
-                          <ComboboxItem
-                            key={option.id}
-                            value={String(option.id)}
-                          >
+                        {(option: SelectOption) => (
+                          <ComboboxItem key={option.id} value={option}>
                             <span
                               className="border-border size-3 rounded-full border"
                               style={{ backgroundColor: option.color }}
                             />
                             {option.value}
                           </ComboboxItem>
-                        ))}
+                        )}
                       </ComboboxList>
                     </ComboboxContent>
                   </Combobox>
@@ -218,7 +208,7 @@ export function FinanceEntryForm({ selectOptions }: FinanceEntryFormProps) {
                 </DialogClose>
                 <Button
                   type="submit"
-                  disabled={!date || !selectedBank || !selectedType}
+                  disabled={!date || !bank || !type}
                 >
                   Create
                 </Button>

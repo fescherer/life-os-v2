@@ -11,6 +11,12 @@ import {
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+} from "lucide-react";
 import React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -61,6 +67,15 @@ export function DataTable<TData, TValue>({
   });
 
   const filter = filterColumn ? table.getColumn(filterColumn) : undefined;
+  const totalItems = table.getFilteredRowModel().rows.length;
+  const visibleItems = table.getRowModel().rows.length;
+  const pageCount = table.getPageCount();
+  const pageIndex = table.getState().pagination.pageIndex;
+  const pageSize = table.getState().pagination.pageSize;
+  const currentPage = totalItems > 0 ? pageIndex + 1 : 0;
+  const firstVisibleItem = totalItems > 0 ? pageIndex * pageSize + 1 : 0;
+  const lastVisibleItem =
+    totalItems > 0 ? Math.min(firstVisibleItem + visibleItems - 1, totalItems) : 0;
 
   return (
     <div>
@@ -75,69 +90,105 @@ export function DataTable<TData, TValue>({
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
+      <div className="bg-background flex min-h-[42rem] flex-col overflow-hidden rounded-md border">
+        <div className="flex-1 overflow-hidden">
+          <Table>
+            <TableHeader className="bg-muted/40">
+              {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
+                  key={headerGroup.id}
+                  className="bg-muted/40 hover:bg-muted/40"
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No results.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24 text-center">
+                    No results.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.previousPage()}
-          disabled={!table.getCanPreviousPage()}
-        >
-          Anterior
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => table.nextPage()}
-          disabled={!table.getCanNextPage()}
-        >
-          Proxima
-        </Button>
+        <div className="border-border bg-muted/40 flex flex-col gap-3 border-t px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-muted-foreground flex flex-wrap items-center gap-x-5 gap-y-2">
+            <span>{`Page ${currentPage} of ${pageCount}`}</span>
+            <span>{`${firstVisibleItem}-${lastVisibleItem} of ${totalItems}`}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 self-end sm:self-auto">
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() => table.firstPage()}
+              disabled={!table.getCanPreviousPage()}
+              aria-label="First page"
+              title="First page"
+            >
+              <ChevronsLeft />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+              aria-label="Previous page"
+              title="Previous page"
+            >
+              <ChevronLeft />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+              aria-label="Next page"
+              title="Next page"
+            >
+              <ChevronRight />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon-sm"
+              onClick={() => table.lastPage()}
+              disabled={!table.getCanNextPage()}
+              aria-label="Last page"
+              title="Last page"
+            >
+              <ChevronsRight />
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
