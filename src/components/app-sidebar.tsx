@@ -6,6 +6,7 @@ import {
   Archive,
   Building2,
   Clapperboard,
+  CircleDollarSign,
   Home,
   Landmark,
   LayoutGrid,
@@ -37,8 +38,13 @@ const mainLinks = [
     icon: Landmark,
   },
   {
-    href: "/collection",
-    label: "Collection",
+    href: "/coin-collection",
+    label: "Coin Collection",
+    icon: CircleDollarSign,
+  },
+  {
+    href: "/gogo-toys",
+    label: "Gogo Toys",
     icon: Archive,
   },
   {

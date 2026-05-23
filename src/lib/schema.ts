@@ -53,6 +53,57 @@ export const DB_TABLES = [
     ],
   },
   {
+    id: "coin_collection",
+    label: "Coin Collection",
+    columns: [
+      {
+        id: "year",
+        label: "Year",
+        type: POSSIBLE_TYPES.STRING,
+      },
+      {
+        id: "name",
+        label: "Name",
+        type: POSSIBLE_TYPES.STRING,
+      },
+      {
+        id: "family",
+        label: "Family",
+        type: POSSIBLE_TYPES.STRING,
+      },
+      {
+        id: "description",
+        label: "Description",
+        type: POSSIBLE_TYPES.STRING,
+      },
+      {
+        id: "numistaId",
+        label: "Numista ID",
+        type: POSSIBLE_TYPES.STRING,
+      },
+      {
+        id: "imageUrl",
+        label: "Image",
+        type: POSSIBLE_TYPES.URL,
+      },
+      {
+        id: "material",
+        label: "Material",
+        type: POSSIBLE_TYPES.STRING,
+      },
+      {
+        id: "isCommemorative",
+        label: "Commemorative",
+        type: POSSIBLE_TYPES.BOOLEAN,
+      },
+      {
+        id: "isOwned",
+        label: "In Collection",
+        type: POSSIBLE_TYPES.BOOLEAN,
+      },
+    ],
+  },
+  {
     id: "assets",
     label: "Assets",
     columns: [
