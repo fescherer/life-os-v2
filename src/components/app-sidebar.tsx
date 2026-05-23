@@ -2,7 +2,17 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Home, LayoutGrid, Settings, UserCircle } from "lucide-react";
+import {
+  Archive,
+  Building2,
+  Clapperboard,
+  Home,
+  Landmark,
+  LayoutGrid,
+  Settings,
+  UserCircle,
+  Warehouse,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -20,6 +30,31 @@ const mainLinks = [
     href: "/finance",
     label: "Finance",
     icon: LayoutGrid,
+  },
+  {
+    href: "/finance-assets",
+    label: "Finance Assets",
+    icon: Landmark,
+  },
+  {
+    href: "/collection",
+    label: "Collection",
+    icon: Archive,
+  },
+  {
+    href: "/reviews",
+    label: "Reviews",
+    icon: Clapperboard,
+  },
+  {
+    href: "/warehouse",
+    label: "Warehouse",
+    icon: Warehouse,
+  },
+  {
+    href: "/company",
+    label: "Company",
+    icon: Building2,
   },
 ];
 
