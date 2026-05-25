@@ -3,6 +3,7 @@ export type Review = {
   finished_date: string;
   type: string;
   title: string;
+  cover_image?: string;
   review: string;
   review_stars: number;
 };

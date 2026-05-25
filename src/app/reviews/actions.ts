@@ -42,6 +42,7 @@ function getReviewInput(formData: FormData): Review {
   const finished_date = getIsoDate(formData, "finished_date");
   const type = getString(formData, "type");
   const title = getString(formData, "title");
+  const cover_image = getString(formData, "cover_image");
   const review = getString(formData, "review");
   const review_stars = getReviewStars(formData);
 
@@ -54,6 +55,7 @@ function getReviewInput(formData: FormData): Review {
     finished_date,
     type,
     title,
+    cover_image: cover_image || undefined,
     review,
     review_stars,
   };
