@@ -3,10 +3,14 @@ import { CoinCreateDialog } from "@/components/coin-create-dialog";
 import { CoinStatsDialog } from "@/components/coin-stats-dialog";
 import { ExportCsvButton } from "@/components/export-csv-button";
 import { getTableRows } from "@/lib/db-fn/get";
+import { getSelectOptions } from "@/lib/db-fn/select-options";
 import { Coin } from "@/types/coin";
 
 export default async function CoinCollectionPage() {
-  const coins = await getTableRows<Coin>("coin_collection");
+  const [coins, selectOptions] = await Promise.all([
+    getTableRows<Coin>("coin_collection"),
+    getSelectOptions(),
+  ]);
 
   return (
     <main className="grid gap-6 p-6">
@@ -24,12 +28,12 @@ export default async function CoinCollectionPage() {
             filename="coin-collection"
           />
           <CoinStatsDialog coins={coins} />
-          <CoinCreateDialog />
+          <CoinCreateDialog selectOptions={selectOptions} />
         </div>
       </div>
 
       {coins.length > 0 ? (
-        <CoinCollectionGrid coins={coins} />
+        <CoinCollectionGrid coins={coins} selectOptions={selectOptions} />
       ) : (
         <section className="border-border grid min-h-64 place-items-center rounded-md border border-dashed p-8 text-center">
           <div>

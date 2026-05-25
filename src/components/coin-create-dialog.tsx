@@ -12,11 +12,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { SelectOption } from "@/types/select-option";
 import { Plus } from "lucide-react";
 import { useState, useTransition } from "react";
 import toast from "react-hot-toast";
 
-export function CoinCreateDialog() {
+type CoinCreateDialogProps = {
+  selectOptions: SelectOption[];
+};
+
+export function CoinCreateDialog({ selectOptions }: CoinCreateDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -48,7 +53,7 @@ export function CoinCreateDialog() {
           </DialogDescription>
         </DialogHeader>
         <form action={handleAction} className="grid gap-6">
-          <CoinFormFields />
+          <CoinFormFields selectOptions={selectOptions} />
           <DialogFooter showCloseButton>
             <Button type="submit" disabled={isPending}>
               {isPending ? "Saving..." : "Save coin"}

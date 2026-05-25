@@ -5,6 +5,7 @@ import { Coin } from "@/types/coin";
 import { revalidatePath } from "next/cache";
 
 const COIN_COLLECTION_TABLE_ID = "coin_collection";
+const COIN_FAMILY_SELECT_ID = "coin_family";
 
 function getString(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
@@ -37,6 +38,25 @@ function getCoinInput(formData: FormData): Coin {
   };
 }
 
+async function assertCoinFamilyOption(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  userId: string,
+  family: string,
+) {
+  const { error } = await supabase
+    .from("select_options")
+    .select("id")
+    .eq("user_id", userId)
+    .eq("select_identifier", COIN_FAMILY_SELECT_ID)
+    .eq("value", family)
+    .limit(1)
+    .single();
+
+  if (error) {
+    throw new Error("Family must be a configured coin family option.");
+  }
+}
+
 async function getAuthenticatedUserId() {
   const supabase = await createSupabaseServerClient();
   const {
@@ -53,6 +73,8 @@ async function getAuthenticatedUserId() {
 export async function createCoin(formData: FormData) {
   const coin = getCoinInput(formData);
   const { supabase, userId } = await getAuthenticatedUserId();
+
+  await assertCoinFamilyOption(supabase, userId, coin.family);
 
   const { data: lastRow, error: positionError } = await supabase
     .from("app_data")
@@ -89,6 +111,9 @@ export async function updateCoin(formData: FormData) {
   }
 
   const { supabase, userId } = await getAuthenticatedUserId();
+
+  await assertCoinFamilyOption(supabase, userId, coin.family);
+
   const { error } = await supabase
     .from("app_data")
     .update({ data: coin })

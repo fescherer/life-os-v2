@@ -1,14 +1,47 @@
+"use client";
+
+import {
+  Combobox,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxList,
+} from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Coin } from "@/types/coin";
+import { SelectOption } from "@/types/select-option";
+import { useMemo, useRef, useState } from "react";
 
 type CoinFormFieldsProps = {
   coin?: Coin;
+  selectOptions: SelectOption[];
 };
 
-export function CoinFormFields({ coin }: CoinFormFieldsProps) {
+export function CoinFormFields({ coin, selectOptions }: CoinFormFieldsProps) {
+  const defaultFamily = coin?.family;
+  const families = useMemo(
+    () =>
+      selectOptions.filter(
+        (option) => option.select_identifier === "coin_family",
+      ),
+    [selectOptions],
+  );
+  const familyItems = useMemo(() => {
+    const configuredFamilies = families.map((option) => option.value);
+
+    if (defaultFamily && !configuredFamilies.includes(defaultFamily)) {
+      return [defaultFamily, ...configuredFamilies];
+    }
+
+    return configuredFamilies;
+  }, [defaultFamily, families]);
+  const [family, setFamily] = useState<string | null>(defaultFamily ?? null);
+  const comboboxPortalContainerRef = useRef<HTMLDivElement>(null);
+
   return (
-    <div className="grid gap-4">
+    <div ref={comboboxPortalContainerRef} className="grid gap-4">
       <div className="grid gap-2">
         <label className="text-sm font-medium" htmlFor="name">
           Name
@@ -36,16 +69,45 @@ export function CoinFormFields({ coin }: CoinFormFieldsProps) {
           />
         </div>
         <div className="grid gap-2">
-          <label className="text-sm font-medium" htmlFor="family">
-            Family
-          </label>
-          <Input
-            id="family"
+          <span className="text-sm font-medium">Family</span>
+          <Combobox
             name="family"
-            placeholder="Real"
-            defaultValue={coin?.family}
+            items={familyItems}
+            value={family}
+            onValueChange={setFamily}
+            itemToStringLabel={(value) =>
+              families.find((option) => option.value === value)?.value ?? value
+            }
             required
-          />
+          >
+            <ComboboxInput
+              className="w-full"
+              placeholder="Select family"
+              showClear
+            />
+            <ComboboxContent portalContainer={comboboxPortalContainerRef}>
+              <ComboboxEmpty>No family found.</ComboboxEmpty>
+              <ComboboxList>
+                {(value: string) => {
+                  const option = families.find(
+                    (familyOption) => familyOption.value === value,
+                  );
+
+                  return (
+                    <ComboboxItem key={value} value={value}>
+                      {option ? (
+                        <span
+                          className="border-border size-3 rounded-full border"
+                          style={{ backgroundColor: option.color }}
+                        />
+                      ) : null}
+                      {option?.value ?? value}
+                    </ComboboxItem>
+                  );
+                }}
+              </ComboboxList>
+            </ComboboxContent>
+          </Combobox>
         </div>
       </div>
 

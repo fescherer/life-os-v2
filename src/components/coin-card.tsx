@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Coin } from "@/types/coin";
+import { SelectOption } from "@/types/select-option";
 import { RowWithId } from "@/types/table";
 import { CheckCircle2, ImageIcon, Info, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
@@ -26,6 +27,7 @@ import toast from "react-hot-toast";
 
 type CoinCardProps = {
   coin: RowWithId<Coin>;
+  selectOptions: SelectOption[];
 };
 
 function getNumistaUrl(numistaId: string) {
@@ -34,7 +36,7 @@ function getNumistaUrl(numistaId: string) {
   return `https://en.numista.com/catalogue/pieces${encodeURIComponent(normalizedId)}.html`;
 }
 
-export function CoinCard({ coin }: CoinCardProps) {
+export function CoinCard({ coin, selectOptions }: CoinCardProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
@@ -115,7 +117,7 @@ export function CoinCard({ coin }: CoinCardProps) {
                 </DialogDescription>
               </DialogHeader>
               <form action={handleUpdate} className="grid gap-6">
-                <CoinFormFields coin={coin} />
+                <CoinFormFields coin={coin} selectOptions={selectOptions} />
                 <DialogFooter className="gap-2 sm:justify-between" showCloseButton>
                   <Button
                     type="button"

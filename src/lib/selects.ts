@@ -24,4 +24,10 @@ export const SELECTS = [
     identifier: "asset_entry_type",
     name: "finances_asset_entry_type",
   },
+  {
+    id: 5,
+    label: "Coin Family",
+    identifier: "coin_family",
+    name: "coin_family",
+  },
 ] as const;

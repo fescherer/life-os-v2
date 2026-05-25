@@ -1,17 +1,26 @@
 "use client";
 
-/* eslint-disable tailwindcss/no-custom-classname */
-
 import { CoinCard } from "@/components/coin-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Coin } from "@/types/coin";
+import { SelectOption } from "@/types/select-option";
 import { RowWithId } from "@/types/table";
 import { Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 type CoinCollectionGridProps = {
   coins: RowWithId<Coin>[];
+  selectOptions: SelectOption[];
 };
 
 const statusOptions = [
@@ -42,7 +51,10 @@ function getSearchText(coin: RowWithId<Coin>) {
     .toLowerCase();
 }
 
-export function CoinCollectionGrid({ coins }: CoinCollectionGridProps) {
+export function CoinCollectionGrid({
+  coins,
+  selectOptions,
+}: CoinCollectionGridProps) {
   const [query, setQuery] = useState("");
   const [status, setStatus] =
     useState<(typeof statusOptions)[number]["value"]>("all");
@@ -83,31 +95,43 @@ export function CoinCollectionGrid({ coins }: CoinCollectionGridProps) {
           />
         </label>
 
-        <select
+        <Select
           value={status}
-          onChange={(event) =>
-            setStatus(event.target.value as typeof status)
-          }
-          className="border-input bg-input/30 focus-visible:border-ring focus-visible:ring-ring h-9 rounded-4xl border px-3 text-sm transition-colors outline-none focus-visible:ring-[3px]"
+          onValueChange={(value) => setStatus(value as typeof status)}
         >
-          {statusOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="w-full sm:w-36">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Status</SelectLabel>
+              {statusOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
 
-        <select
+        <Select
           value={type}
-          onChange={(event) => setType(event.target.value as typeof type)}
-          className="border-input bg-input/30 focus-visible:border-ring focus-visible:ring-ring h-9 rounded-4xl border px-3 text-sm transition-colors outline-none focus-visible:ring-[3px]"
+          onValueChange={(value) => setType(value as typeof type)}
         >
-          {typeOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="w-full sm:w-44">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Type</SelectLabel>
+              {typeOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
 
         <Button
           type="button"
@@ -128,7 +152,11 @@ export function CoinCollectionGrid({ coins }: CoinCollectionGridProps) {
       {filteredCoins.length > 0 ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
           {filteredCoins.map((coin) => (
-            <CoinCard key={coin.id} coin={coin} />
+            <CoinCard
+              key={coin.id}
+              coin={coin}
+              selectOptions={selectOptions}
+            />
           ))}
         </div>
       ) : (
