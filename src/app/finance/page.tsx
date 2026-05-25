@@ -1,3 +1,4 @@
+import { ExportCsvButton } from "@/components/export-csv-button";
 import { FinanceEntryForm } from "@/components/finance-entry-form";
 import { FinanceTable } from "@/components/finance-table";
 import { getSelectOptions } from "@/lib/db-fn/select-options";
@@ -19,7 +20,8 @@ export default async function FinancePage() {
             Track income, expenses, and transfers.
           </p>
         </div>
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
+          <ExportCsvButton data={financeEntries} filename="finance" />
           <FinanceEntryForm selectOptions={selectOptions} />
         </div>
       </div>

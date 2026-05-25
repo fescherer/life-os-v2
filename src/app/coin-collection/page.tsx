@@ -1,6 +1,7 @@
 import { CoinCollectionGrid } from "@/components/coin-collection-grid";
 import { CoinCreateDialog } from "@/components/coin-create-dialog";
 import { CoinStatsDialog } from "@/components/coin-stats-dialog";
+import { ExportCsvButton } from "@/components/export-csv-button";
 import { getTableRows } from "@/lib/db-fn/get";
 import { Coin } from "@/types/coin";
 
@@ -17,6 +18,11 @@ export default async function CoinCollectionPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <ExportCsvButton
+            data={coins}
+            excludeColumns={["material", "isCommemorative"]}
+            filename="coin-collection"
+          />
           <CoinStatsDialog coins={coins} />
           <CoinCreateDialog />
         </div>
