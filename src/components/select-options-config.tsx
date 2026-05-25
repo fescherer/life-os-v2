@@ -148,9 +148,18 @@ export function SelectOptionsConfig({ options }: SelectOptionsConfigProps) {
                   name="select_identifier"
                   value={selectedSelect.identifier}
                 />
-                <label className="block text-sm font-medium">
+                <label
+                  htmlFor="select-option-value"
+                  className="block text-sm font-medium"
+                >
                   Name
-                  <Input name="value" className="mt-1" autoFocus />
+                  <Input
+                    id="select-option-value"
+                    name="value"
+                    className="mt-1"
+                    autoFocus
+                    required
+                  />
                 </label>
                 <label className="block text-sm font-medium">
                   Color
