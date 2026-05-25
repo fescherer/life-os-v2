@@ -30,4 +30,10 @@ export const SELECTS = [
     identifier: "coin_family",
     name: "coin_family",
   },
+  {
+    id: 6,
+    label: "Review Type",
+    identifier: "review_type",
+    name: "review_type",
+  },
 ] as const;
