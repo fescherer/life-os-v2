@@ -19,7 +19,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Coin } from "@/types/coin";
 import { RowWithId } from "@/types/table";
-import { ExternalLink, ImageIcon, Pencil, Trash2 } from "lucide-react";
+import { CheckCircle2, ImageIcon, Info, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import toast from "react-hot-toast";
@@ -69,6 +69,7 @@ export function CoinCard({ coin }: CoinCardProps) {
     startTransition(async () => {
       try {
         await deleteCoin(coin.id);
+        setIsEditOpen(false);
         toast.success("Coin deleted.");
       } catch (error) {
         toast.error(
@@ -81,137 +82,110 @@ export function CoinCard({ coin }: CoinCardProps) {
   return (
     <article
       className={cn(
-        "group grid overflow-hidden rounded-md border text-card-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
-        coin.isOwned
-          ? "border-emerald-200 bg-emerald-50/70"
-          : "border-border bg-card",
+        "group grid overflow-hidden rounded-md border bg-card text-card-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md",
+        coin.isOwned ? "border-primary/45" : "border-border",
       )}
     >
-      <div
-        className={cn(
-          "relative flex aspect-[5/4] items-center justify-center overflow-hidden",
-          coin.isOwned
-            ? "bg-[radial-gradient(circle_at_center,_rgba(16,185,129,0.18),_rgba(236,253,245,0.78)_58%,_rgba(255,255,255,0.35))]"
-            : "bg-[radial-gradient(circle_at_center,_rgba(148,163,184,0.22),_rgba(248,250,252,0.9)_60%,_rgba(255,255,255,0.6))]",
-        )}
-      >
-        <div className="absolute inset-x-6 bottom-7 h-4 rounded-full bg-black/10 blur-md" />
-        <div className="bg-background relative grid size-36 place-items-center overflow-hidden rounded-full border border-white/80 shadow-lg ring-8 ring-white/45">
-          {coin.imageUrl ? (
-            <img
-              src={coin.imageUrl}
-              alt={coin.name}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <ImageIcon className="text-muted-foreground size-10" />
-          )}
-        </div>
-        <span
-          className={cn(
-            "absolute top-3 left-3 rounded-md px-2 py-1 text-xs font-medium",
-            coin.isOwned
-              ? "bg-emerald-600 text-white"
-              : "bg-background/90 text-muted-foreground",
-          )}
-        >
-          {coin.isOwned ? "Collected" : "Missing"}
-        </span>
-      </div>
-
-      <div className="grid gap-4 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h2 className="truncate text-base font-semibold">{coin.name}</h2>
-            <p className="text-muted-foreground text-sm">
-              {coin.year} - {coin.family}
-            </p>
-          </div>
-          <label className="border-border bg-background/70 flex items-center gap-2 rounded-md border px-2 py-1 text-sm font-medium">
-            <input
-              type="checkbox"
-              checked={coin.isOwned}
-              disabled={isPending}
-              onChange={(event) => handleOwnedChange(event.target.checked)}
-              className="border-input size-4 rounded border"
-            />
-            Own
-          </label>
+      <div className="bg-secondary flex min-h-24 items-start justify-between gap-3 p-3">
+        <div className="min-w-0">
+          <p className="text-muted-foreground text-sm font-medium">
+            {coin.year}
+          </p>
+          <h2 className="truncate text-xl leading-tight font-semibold">
+            {coin.name}
+          </h2>
+          <p className="text-muted-foreground line-clamp-1 text-sm font-medium">
+            {coin.description || coin.family}
+          </p>
         </div>
 
-        <div className="grid gap-2 text-sm">
-          <div>
-            <span className="text-muted-foreground">Material</span>
-            <p className="font-medium">{coin.material}</p>
-          </div>
-          {coin.description ? (
-            <p className="text-muted-foreground bg-background/55 line-clamp-2 rounded-md p-2">
-              {coin.description}
-            </p>
-          ) : null}
-          <div className="flex flex-wrap gap-2">
-            <span className="bg-background/80 text-foreground rounded-md px-2 py-1 text-xs font-medium">
-              {coin.isCommemorative ? "Commemorative" : "Ordinary"}
-            </span>
-            <span className="bg-background/80 text-foreground rounded-md px-2 py-1 text-xs font-medium">
-              {coin.family}
-            </span>
-          </div>
-        </div>
+        <div className="flex shrink-0 items-center gap-1">
+          <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+            <DialogTrigger asChild>
+              <Button variant="ghost" size="icon-sm">
+                <Pencil className="size-4" />
+                <span className="sr-only">Edit coin</span>
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Edit coin</DialogTitle>
+                <DialogDescription>
+                  Update this coin or remove it from your catalogue.
+                </DialogDescription>
+              </DialogHeader>
+              <form action={handleUpdate} className="grid gap-6">
+                <CoinFormFields coin={coin} />
+                <DialogFooter className="gap-2 sm:justify-between" showCloseButton>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={isPending}
+                    onClick={handleDelete}
+                  >
+                    <Trash2 className="size-4" />
+                    {isPending ? "Deleting..." : "Delete"}
+                  </Button>
+                  <Button type="submit" disabled={isPending}>
+                    {isPending ? "Saving..." : "Save changes"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
 
-        <div className="flex items-center justify-between gap-2">
           {coin.numistaId ? (
-            <Button asChild variant="outline" size="sm">
+            <Button asChild variant="ghost" size="icon-sm">
               <Link
                 href={getNumistaUrl(coin.numistaId)}
                 target="_blank"
                 rel="noreferrer"
               >
-                <ExternalLink className="size-4" />
-                Numista
+                <Info className="size-4" />
+                <span className="sr-only">Open coin on Numista</span>
               </Link>
             </Button>
-          ) : (
-            <span />
-          )}
-
-          <div className="flex gap-1">
-            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-              <DialogTrigger asChild>
-                <Button variant="ghost" size="icon-sm">
-                  <Pencil className="size-4" />
-                  <span className="sr-only">Edit coin</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Edit coin</DialogTitle>
-                  <DialogDescription>
-                    Update this coin without changing the rest of your catalogue.
-                  </DialogDescription>
-                </DialogHeader>
-                <form action={handleUpdate} className="grid gap-6">
-                  <CoinFormFields coin={coin} />
-                  <DialogFooter showCloseButton>
-                    <Button type="submit" disabled={isPending}>
-                      {isPending ? "Saving..." : "Save changes"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              disabled={isPending}
-              onClick={handleDelete}
-            >
-              <Trash2 className="size-4" />
-              <span className="sr-only">Delete coin</span>
-            </Button>
-          </div>
+          ) : null}
         </div>
+      </div>
+
+      <div className="grid gap-3 p-3">
+        <div
+          className={cn(
+            "relative grid aspect-[16/9] place-items-center overflow-hidden rounded-sm border bg-muted/35",
+            coin.isOwned ? "border-primary/35" : "border-border",
+          )}
+        >
+          {coin.isOwned ? (
+            <span className="bg-primary text-primary-foreground absolute top-2 left-2 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium shadow-sm">
+              <CheckCircle2 className="size-3.5" />
+              Collected
+            </span>
+          ) : null}
+          {coin.imageUrl ? (
+            <img
+              src={coin.imageUrl}
+              alt={coin.name}
+              className="h-full w-full object-contain p-2"
+            />
+          ) : (
+            <ImageIcon className="text-muted-foreground size-9" />
+          )}
+        </div>
+
+        <button
+          type="button"
+          disabled={isPending}
+          onClick={() => handleOwnedChange(!coin.isOwned)}
+          className={cn(
+            "h-10 rounded-md border px-3 text-sm font-semibold uppercase tracking-normal transition-colors disabled:pointer-events-none disabled:opacity-50",
+            coin.isOwned
+              ? "border-primary bg-primary text-primary-foreground hover:bg-primary/85"
+              : "border-border bg-secondary text-secondary-foreground hover:bg-accent",
+          )}
+        >
+          {coin.isOwned ? "Collected" : "Missing"}
+        </button>
       </div>
     </article>
   );

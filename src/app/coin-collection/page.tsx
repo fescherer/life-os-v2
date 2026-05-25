@@ -1,4 +1,4 @@
-import { CoinCard } from "@/components/coin-card";
+import { CoinCollectionGrid } from "@/components/coin-collection-grid";
 import { CoinCreateDialog } from "@/components/coin-create-dialog";
 import { CoinStatsDialog } from "@/components/coin-stats-dialog";
 import { getTableRows } from "@/lib/db-fn/get";
@@ -23,17 +23,13 @@ export default async function CoinCollectionPage() {
       </div>
 
       {coins.length > 0 ? (
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-          {coins.map((coin) => (
-            <CoinCard key={coin.id} coin={coin} />
-          ))}
-        </section>
+        <CoinCollectionGrid coins={coins} />
       ) : (
         <section className="border-border grid min-h-64 place-items-center rounded-md border border-dashed p-8 text-center">
           <div>
             <h2 className="font-semibold">No coins yet</h2>
             <p className="text-muted-foreground mt-1 text-sm">
-              Add your first coin with a year, family, material, and image.
+              Add your first coin with a year, family, name, and image.
             </p>
           </div>
         </section>
