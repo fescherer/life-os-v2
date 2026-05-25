@@ -5,5 +5,6 @@ export type WarehouseItem = {
 
 export type WarehouseBox = {
   name: string;
+  coverUrl?: string;
   items: WarehouseItem[];
 };

@@ -10,6 +10,26 @@ function getString(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
 }
 
+function getCoverUrl(formData: FormData) {
+  const coverUrl = getString(formData, "coverUrl");
+
+  if (!coverUrl) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(coverUrl);
+
+    if (url.protocol !== "http:" && url.protocol !== "https:") {
+      throw new Error("Cover URL must start with http or https.");
+    }
+
+    return coverUrl;
+  } catch {
+    throw new Error("Cover URL must be a valid http or https URL.");
+  }
+}
+
 function createId(prefix: string) {
   return `${prefix}-${crypto.randomUUID()}`;
 }
@@ -19,6 +39,8 @@ function normalizeBox(data: unknown): WarehouseBox {
 
   return {
     name: typeof boxData.name === "string" ? boxData.name : "BOX",
+    coverUrl:
+      typeof boxData.coverUrl === "string" ? boxData.coverUrl : undefined,
     items: Array.isArray(boxData.items) ? boxData.items : [],
   };
 }
@@ -96,6 +118,7 @@ export async function createWarehouseBox(formData: FormData) {
 export async function renameWarehouseBox(formData: FormData) {
   const id = getString(formData, "id");
   const name = getString(formData, "name");
+  const coverUrl = getCoverUrl(formData);
 
   if (!id || !name) {
     throw new Error("Box id and name are required.");
@@ -105,7 +128,9 @@ export async function renameWarehouseBox(formData: FormData) {
   const currentBox = await getWarehouseBox(id, userId);
   const { error } = await supabase
     .from("app_data")
-    .update({ data: { ...currentBox, name } satisfies WarehouseBox })
+    .update({
+      data: { ...currentBox, name, coverUrl } satisfies WarehouseBox,
+    })
     .eq("table_id", WAREHOUSE_TABLE_ID)
     .eq("user_id", userId)
     .eq("id", id);

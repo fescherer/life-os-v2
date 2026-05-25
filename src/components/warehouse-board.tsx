@@ -24,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { PageCoverBanner } from "@/components/page-cover-banner";
 import { WarehouseEmptyState } from "@/components/warehouse-empty-state";
 import { cn } from "@/lib/utils";
 import { RowWithId } from "@/types/table";
@@ -55,6 +56,7 @@ export function WarehouseBoard({ boxes }: WarehouseBoardProps) {
     null,
   );
   const [renameValue, setRenameValue] = useState("");
+  const [coverUrlValue, setCoverUrlValue] = useState("");
   const [isPending, startTransition] = useTransition();
   const activeBox = boxes.find((boxItem) => boxItem.id === activeTabId);
   const totalItems = boxes.reduce(
@@ -102,6 +104,7 @@ export function WarehouseBoard({ boxes }: WarehouseBoardProps) {
   function openRenameDialog(boxItem: RowWithId<WarehouseBox>) {
     setRenameBox(boxItem);
     setRenameValue(boxItem.name);
+    setCoverUrlValue(boxItem.coverUrl ?? "");
   }
 
   function handleRenameBox(event: FormEvent<HTMLFormElement>) {
@@ -119,6 +122,7 @@ export function WarehouseBoard({ boxes }: WarehouseBoardProps) {
         await renameWarehouseBox(formData);
         setRenameBox(null);
         setRenameValue("");
+        setCoverUrlValue("");
         toast.success("Sheet renamed.");
       } catch (error) {
         toast.error(
@@ -321,6 +325,11 @@ export function WarehouseBoard({ boxes }: WarehouseBoardProps) {
 
         {activeBox ? (
           <div className="grid gap-4 p-4">
+            <PageCoverBanner
+              title={activeBox.name}
+              coverUrl={activeBox.coverUrl}
+            />
+
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-base font-semibold">{activeBox.name}</h2>
@@ -391,9 +400,9 @@ export function WarehouseBoard({ boxes }: WarehouseBoardProps) {
       <Dialog open={Boolean(renameBox)} onOpenChange={() => setRenameBox(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rename sheet</DialogTitle>
+            <DialogTitle>Edit sheet</DialogTitle>
             <DialogDescription>
-              Update the sheet name shown in the warehouse tab bar.
+              Update the sheet name and cover image.
             </DialogDescription>
           </DialogHeader>
           <form className="grid gap-4" onSubmit={handleRenameBox}>
@@ -403,6 +412,14 @@ export function WarehouseBoard({ boxes }: WarehouseBoardProps) {
               value={renameValue}
               onChange={(event) => setRenameValue(event.target.value)}
               autoFocus
+            />
+            <Input
+              aria-label="Cover image URL"
+              name="coverUrl"
+              type="url"
+              placeholder="https://example.com/banner.jpg"
+              value={coverUrlValue}
+              onChange={(event) => setCoverUrlValue(event.target.value)}
             />
             <DialogFooter showCloseButton>
               <Button type="submit" disabled={isPending}>

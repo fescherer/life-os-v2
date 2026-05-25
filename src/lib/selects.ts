@@ -36,4 +36,16 @@ export const SELECTS = [
     identifier: "review_type",
     name: "review_type",
   },
+  {
+    id: 7,
+    label: "Store",
+    identifier: "store",
+    name: "store",
+  },
+  {
+    id: 8,
+    label: "Gogo Color Type",
+    identifier: "gogo_color_type",
+    name: "gogo_color_type",
+  },
 ] as const;
