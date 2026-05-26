@@ -137,14 +137,9 @@ export const DB_TABLES = [
         type: POSSIBLE_TYPES.DATE,
       },
       {
-        id: "amount",
+        id: "value",
         label: "Valor",
         type: POSSIBLE_TYPES.NUMBER,
-      },
-      {
-        id: "description",
-        label: "Descricao",
-        type: POSSIBLE_TYPES.STRING,
       },
       {
         id: "bank",
@@ -163,7 +158,7 @@ export const DB_TABLES = [
         },
       },
       {
-        id: "asset",
+        id: "asset_id",
         label: "Ativo",
         type: POSSIBLE_TYPES.RELATION,
         config: {
