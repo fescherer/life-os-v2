@@ -3,13 +3,19 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import {
   Archive,
-  Building2,
   Clapperboard,
   CircleDollarSign,
   Home,
   Landmark,
   LayoutGrid,
+  Menu,
   Settings,
   UserCircle,
   Warehouse,
@@ -57,18 +63,17 @@ const mainLinks = [
     label: "Warehouse",
     icon: Warehouse,
   },
-  {
-    href: "/company",
-    label: "Company",
-    icon: Building2,
-  },
 ];
 
 export function AppSidebar({ userEmail }: AppSidebarProps) {
   const pathname = usePathname();
 
-  return (
-    <aside className="border-border bg-sidebar text-sidebar-foreground flex w-64 shrink-0 flex-col border-r px-3 py-4">
+  if (pathname === "/login") {
+    return null;
+  }
+
+  const sidebarContent = (
+    <>
       <div className="px-2">
         <Link href="/" className="flex items-center gap-2">
           <div className="bg-primary text-primary-foreground flex size-9 items-center justify-center rounded-md text-sm font-semibold">
@@ -122,6 +127,37 @@ export function AppSidebar({ userEmail }: AppSidebarProps) {
           Configuration
         </Link>
       </Button>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      <header className="border-border bg-background fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b px-4 md:hidden">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-md text-xs font-semibold">
+            LO
+          </div>
+          <span className="text-sm font-semibold">Life OS</span>
+        </Link>
+        <Drawer direction="left">
+          <DrawerTrigger asChild>
+            <Button variant="outline" size="icon-sm" aria-label="Open menu">
+              <Menu className="size-4" />
+            </Button>
+          </DrawerTrigger>
+          <DrawerContent className="w-80 max-w-[calc(100vw-2rem)]">
+            <DrawerClose asChild>
+              <div className="flex min-h-[calc(100vh-2rem)] flex-col px-2 py-3">
+                {sidebarContent}
+              </div>
+            </DrawerClose>
+          </DrawerContent>
+        </Drawer>
+      </header>
+
+      <aside className="border-border bg-sidebar text-sidebar-foreground hidden w-64 shrink-0 flex-col border-r px-3 py-4 md:flex">
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

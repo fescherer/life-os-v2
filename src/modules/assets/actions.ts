@@ -21,7 +21,7 @@ async function assertSelectOption(selectIdentifier: string, id: number) {
   }
 }
 
-async function assertAsset(id: number) {
+async function assertAsset(id: string) {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase
     .from("app_data")
@@ -92,11 +92,11 @@ function getAssetInput(formData: FormData) {
 function getAssetEntryInput(formData: FormData) {
   const date = getString(formData, "date");
   const value = Number(getString(formData, "value"));
-  const assetId = Number(formData.get("asset_id"));
+  const assetId = getString(formData, "asset_id");
   const bank = Number(formData.get("bank"));
   const type = Number(formData.get("type"));
 
-  if (!date || !Number.isFinite(value) || !Number.isInteger(assetId)) {
+  if (!date || !Number.isFinite(value) || !assetId) {
     throw new Error("Date, value, and asset are required.");
   }
 

@@ -9,5 +9,5 @@ export type AssetEntry = {
   value: number;
   bank: number;
   type: number;
-  asset_id: number;
+  asset_id: string;
 };

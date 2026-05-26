@@ -137,21 +137,21 @@ function FinanceRowActionsContent({
 }) {
   return (
     <DropdownMenuContent align="end">
-      <DropdownMenuLabel>Ações</DropdownMenuLabel>
+      <DropdownMenuLabel>Actions</DropdownMenuLabel>
       <DropdownMenuItem onSelect={onEdit}>
         <Pencil />
-        Editar
+        Edit
       </DropdownMenuItem>
       <DropdownMenuItem onSelect={onDuplicate}>
         <Copy />
-        Duplicar
+        Duplicate
       </DropdownMenuItem>
       <DropdownMenuItem
         variant="destructive"
         onSelect={onDelete}
       >
         <Trash2 />
-        Excluir
+        Delete
       </DropdownMenuItem>
       <TimestampLabels entry={entry} />
     </DropdownMenuContent>
@@ -247,22 +247,22 @@ export function FinanceRowActions({
   const confirmation =
     confirmationAction === "save"
       ? {
-        title: "Salvar alterações?",
-        description: "Confirme que deseja atualizar este lançamento financeiro.",
-        confirmText: "Salvar",
+        title: "Save changes?",
+        description: "Confirm that you want to update this finance entry.",
+        confirmText: "Save",
         variant: "default" as const,
       }
       : confirmationAction === "duplicate"
         ? {
-          title: "Duplicar lançamento?",
-          description: "Confirme que deseja criar uma cópia desta linha.",
-          confirmText: "Duplicar",
+          title: "Duplicate entry?",
+          description: "Confirm that you want to create a copy of this row.",
+          confirmText: "Duplicate",
           variant: "default" as const,
         }
         : {
-          title: "Excluir lançamento?",
-          description: "Esta ação excluirá este lançamento financeiro permanentemente.",
-          confirmText: "Excluir",
+          title: "Delete entry?",
+          description: "This will permanently delete this finance entry.",
+          confirmText: "Delete",
           variant: "destructive" as const,
         };
 
@@ -277,9 +277,9 @@ export function FinanceRowActions({
 
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Editar lançamento financeiro</DialogTitle>
+          <DialogTitle>Edit finance entry</DialogTitle>
           <DialogDescription>
-            Atualize os detalhes salvos desta linha.
+            Update the saved details for this row.
           </DialogDescription>
         </DialogHeader>
 
@@ -295,11 +295,11 @@ export function FinanceRowActions({
           <DialogFooter>
             <DialogClose asChild>
               <Button type="button" variant="outline">
-                Cancelar
+                Cancel
               </Button>
             </DialogClose>
             <Button type="button" onClick={confirmSave} disabled={!isEditReady}>
-              Salvar
+              Save
             </Button>
           </DialogFooter>
         </form>
@@ -315,10 +315,11 @@ export function FinanceRowActions({
         title={confirmation.title}
         description={confirmation.description}
         confirmText={confirmation.confirmText}
-        cancelText="Cancelar"
+        cancelText="Cancel"
         variant={confirmation.variant}
         onConfirm={confirmAction}
       />
     </Dialog>
   );
 }
+

@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { AppToaster } from "@/components/app-toaster";
 import { AppSidebar } from "@/components/app-sidebar";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
-const inter = Inter({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,13 +36,21 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable)}
+      className={cn(
+        "h-full",
+        "antialiased",
+        geistSans.variable,
+        geistMono.variable,
+        "font-sans",
+        inter.variable,
+      )}
     >
       <body className="min-h-full">
         <div className="bg-background flex min-h-screen">
           <AppSidebar userEmail={user?.email} />
-          <div className="min-w-0 flex-1">{children}</div>
+          <div className="min-w-0 flex-1 pt-14 md:pt-0">{children}</div>
         </div>
+        <AppToaster />
       </body>
     </html>
   );

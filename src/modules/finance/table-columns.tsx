@@ -235,7 +235,7 @@ export function getFinanceEntryColumns(
       accessorKey: "description",
       size: 360,
       header: ({ column }) => (
-        <SortableHeader column={column} label="Descricao" align="right" />
+        <SortableHeader column={column} label="Description" align="right" />
       ),
       cell: ({ row }) => (
         <div

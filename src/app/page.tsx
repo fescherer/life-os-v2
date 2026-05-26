@@ -1,160 +1,127 @@
-"use client";
+import { getTableRows } from "@/lib/db-fn/get";
+import {
+  getGogoCollections,
+  getGogoPurchases,
+} from "@/modules/gogo-toys/queries";
+import { getWarehouseBoxes } from "@/modules/warehouse/queries";
+import {
+  Archive,
+  Boxes,
+  CircleDollarSign,
+  Clapperboard,
+  Landmark,
+  LayoutGrid,
+} from "lucide-react";
+import Link from "next/link";
 
-import { useState } from "react";
-import { SELECT_OPTIONS } from "@/lib/selects-options";
-import { DB_TABLES, POSSIBLE_TYPES } from "@/lib/schema";
-import { DB_ROWS, DB_ROWS_VALUES } from "@/lib/rows";
-import { supabase } from "@/lib/supabase";
+const overviewCards = [
+  {
+    href: "/finance",
+    label: "Finance",
+    description: "Income, expenses, and transfers",
+    icon: LayoutGrid,
+  },
+  {
+    href: "/finance-assets",
+    label: "Finance Assets",
+    description: "Assets and transaction history",
+    icon: Landmark,
+  },
+  {
+    href: "/coin-collection",
+    label: "Coin Collection",
+    description: "Coins catalogued locally",
+    icon: CircleDollarSign,
+  },
+  {
+    href: "/reviews",
+    label: "Reviews",
+    description: "Media reviews and ratings",
+    icon: Clapperboard,
+  },
+  {
+    href: "/gogo-toys",
+    label: "Gogo Toys",
+    description: "Collections and purchases",
+    icon: Archive,
+  },
+  {
+    href: "/warehouse",
+    label: "Warehouse",
+    description: "Sheets and stored items",
+    icon: Boxes,
+  },
+] as const;
 
-type DatabaseId = (typeof DB_TABLES)[number]["id"];
-type CellValue = string | number | null;
+export default async function Home() {
+  const [
+    financeEntries,
+    assets,
+    assetEntries,
+    coins,
+    reviews,
+    gogoCollections,
+    gogoPurchases,
+    warehouseBoxes,
+  ] = await Promise.all([
+    getTableRows("finances_entries"),
+    getTableRows("assets"),
+    getTableRows("assets_entries"),
+    getTableRows("coin_collection"),
+    getTableRows("reviews"),
+    getGogoCollections(),
+    getGogoPurchases(),
+    getWarehouseBoxes(),
+  ]);
 
-function getReadableTextColor(backgroundColor: string) {
-  const hex = backgroundColor.replace("#", "");
-
-  if (!/^[0-9a-fA-F]{6}$/.test(hex)) {
-    return "#18181b";
-  }
-
-  const red = parseInt(hex.slice(0, 2), 16);
-  const green = parseInt(hex.slice(2, 4), 16);
-  const blue = parseInt(hex.slice(4, 6), 16);
-  const brightness = (red * 299 + green * 587 + blue * 114) / 1000;
-
-  return brightness < 140 ? "#ffffff" : "#18181b";
-}
-
-function SelectOptionCell({
-  selectId,
-  value,
-}: {
-  selectId: string;
-  value: CellValue;
-}) {
-  if (value === null) {
-    return null;
-  }
-
-  const option = SELECT_OPTIONS.find(
-    (selectOption) =>
-      selectOption.selectIdentifier === selectId && selectOption.id === value,
-  );
-
-  if (!option) {
-    return value;
-  }
-
-  return (
-    <span
-      className="inline-flex min-w-16 items-center justify-center rounded px-2 py-1 text-xs font-medium"
-      style={{
-        backgroundColor: option.color,
-        color: getReadableTextColor(option.color),
-      }}
-    >
-      {option.value}
-    </span>
-  );
-}
-
-// eslint-disable-next-line react/no-multi-comp
-export default function Home() {
-  const [activeId, setActiveId] = useState<DatabaseId>(DB_TABLES[0].id);
-
-  const active = DB_TABLES.find((db) => db.id === activeId) ?? DB_TABLES[0];
-  const activeRowIds = new Set(
-    DB_ROWS.filter((row) => row.table_id === active.id).map((row) => row.id),
-  );
-
-  async function loginWithGoogle() {
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
-  }
-
-  const tableRows = DB_ROWS_VALUES.filter((cell) =>
-    activeRowIds.has(cell.row_id),
-  ).reduce<
-    Record<number, Record<string, CellValue>>
-  >((acc, cell) => {
-    acc[cell.row_id] ??= {};
-
-    acc[cell.row_id][cell.column_id] =
-      cell.value_string ?? cell.value_numeric;
-
-    return acc;
-  }, {});
+  const counts = new Map<string, number>([
+    ["/finance", financeEntries.length],
+    ["/finance-assets", assets.length + assetEntries.length],
+    ["/coin-collection", coins.length],
+    ["/reviews", reviews.length],
+    ["/gogo-toys", gogoCollections.length + gogoPurchases.length],
+    ["/warehouse", warehouseBoxes.reduce(
+      (total, box) => total + box.items.length,
+      warehouseBoxes.length,
+    )],
+  ]);
 
   return (
-    <main className="p-6">
-      <section className="mx-auto max-w-5xl">
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-semibold">Life OS</h1>
+    <main className="grid gap-6 p-6">
+      <div>
+        <h1 className="text-2xl font-semibold">Overview</h1>
+        <p className="text-muted-foreground text-sm">
+          Jump into each workspace and see where your data is active.
+        </p>
+      </div>
 
-          <button
-            onClick={loginWithGoogle}
-            className="rounded border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
-          >
-            Login with Google
-          </button>
-        </div>
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {overviewCards.map((card) => {
+          const Icon = card.icon;
 
-        <div className="mt-6 flex gap-2 border-b border-zinc-300">
-          {DB_TABLES.map((db) => (
-            <button
-              key={db.id}
-              onClick={() => setActiveId(db.id)}
-              className={`px-3 py-2 text-sm font-medium ${
-                activeId === db.id
-                  ? "border-b-2 border-blue-500 text-blue-600"
-                  : "text-zinc-600 hover:text-zinc-900"
-              }`}
+          return (
+            <Link
+              key={card.href}
+              href={card.href}
+              className="border-border bg-card text-card-foreground hover:bg-accent grid gap-4 rounded-md border p-4 transition-colors"
             >
-              {db.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-4 overflow-x-auto rounded-lg border border-zinc-300 bg-white">
-          <table className="w-full border-collapse text-left text-sm">
-            <thead className="bg-zinc-50 text-zinc-600">
-              <tr>
-                {active.columns.map((column) => (
-                  <th key={column.id} className="px-4 py-3 font-medium">
-                    {column.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-
-            <tbody>
-              {Object.entries(tableRows).map(([rowId, row]) => (
-                <tr key={rowId} className="border-t border-zinc-200">
-                  {active.columns.map((column) => {
-                    const value = row[column.id] ?? null;
-
-                    return (
-                      <td key={column.id} className="px-4 py-3">
-                        {column.type === POSSIBLE_TYPES.SELECT &&
-                        "config" in column ? (
-                            <SelectOptionCell
-                              selectId={column.config.selectId}
-                              value={value}
-                            />
-                          ) : (
-                            value ?? ""
-                          )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="bg-secondary flex size-10 items-center justify-center rounded-md">
+                  <Icon className="size-5" />
+                </div>
+                <span className="text-2xl font-semibold">
+                  {counts.get(card.href) ?? 0}
+                </span>
+              </div>
+              <div>
+                <h2 className="font-semibold">{card.label}</h2>
+                <p className="text-muted-foreground text-sm">
+                  {card.description}
+                </p>
+              </div>
+            </Link>
+          );
+        })}
       </section>
     </main>
   );
