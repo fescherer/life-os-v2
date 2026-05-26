@@ -16,6 +16,7 @@ import {
   Landmark,
   LayoutGrid,
   Menu,
+  PackageCheck,
   Settings,
   UserCircle,
   Warehouse,
@@ -52,6 +53,11 @@ const mainLinks = [
     href: "/gogo-toys",
     label: "Gogo Toys",
     icon: Archive,
+  },
+  {
+    href: "/packaging",
+    label: "Packaging",
+    icon: PackageCheck,
   },
   {
     href: "/reviews",

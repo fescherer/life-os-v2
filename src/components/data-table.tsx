@@ -35,6 +35,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   filterColumn?: string;
   filterPlaceholder?: string;
+  minHeightClassName?: string;
   onRowDoubleClick?: (row: TData) => void;
 }
 
@@ -43,6 +44,7 @@ export function DataTable<TData, TValue>({
   data,
   filterColumn,
   filterPlaceholder = "Filter...",
+  minHeightClassName = "min-h-[42rem]",
   onRowDoubleClick,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -94,7 +96,9 @@ export function DataTable<TData, TValue>({
         </div>
       ) : null}
 
-      <div className="bg-background flex min-h-[42rem] flex-col overflow-hidden rounded-md border">
+      <div
+        className={`bg-background flex ${minHeightClassName} flex-col overflow-hidden rounded-md border`}
+      >
         <div className="flex-1 overflow-hidden">
           <Table className="table-fixed">
             <TableHeader className="bg-muted/40">

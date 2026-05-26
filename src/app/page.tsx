@@ -11,6 +11,7 @@ import {
   Clapperboard,
   Landmark,
   LayoutGrid,
+  PackageCheck,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -46,6 +47,12 @@ const overviewCards = [
     icon: Archive,
   },
   {
+    href: "/packaging",
+    label: "Packaging",
+    description: "Upcoming deliveries and history",
+    icon: PackageCheck,
+  },
+  {
     href: "/warehouse",
     label: "Warehouse",
     description: "Sheets and stored items",
@@ -60,6 +67,7 @@ export default async function Home() {
     assetEntries,
     coins,
     reviews,
+    packagingEntries,
     gogoCollections,
     gogoPurchases,
     warehouseBoxes,
@@ -69,6 +77,7 @@ export default async function Home() {
     getTableRows("assets_entries"),
     getTableRows("coin_collection"),
     getTableRows("reviews"),
+    getTableRows("packaging_tracker"),
     getGogoCollections(),
     getGogoPurchases(),
     getWarehouseBoxes(),
@@ -79,6 +88,7 @@ export default async function Home() {
     ["/finance-assets", assets.length + assetEntries.length],
     ["/coin-collection", coins.length],
     ["/reviews", reviews.length],
+    ["/packaging", packagingEntries.length],
     ["/gogo-toys", gogoCollections.length + gogoPurchases.length],
     ["/warehouse", warehouseBoxes.reduce(
       (total, box) => total + box.items.length,

@@ -11,6 +11,7 @@ const SELECT_OPTION_PATHS = [
   "/coin-collection",
   "/reviews",
   "/gogo-toys",
+  "/packaging",
 ];
 
 function getString(formData: FormData, key: string) {

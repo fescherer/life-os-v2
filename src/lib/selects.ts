@@ -48,4 +48,10 @@ export const SELECTS = [
     identifier: "gogo_color_type",
     name: "gogo_color_type",
   },
+  {
+    id: 9,
+    label: "Delivery Company",
+    identifier: "delivery_company",
+    name: "delivery_company",
+  },
 ] as const;
