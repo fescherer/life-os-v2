@@ -1,7 +1,7 @@
 "use client";
 
-import { createReview } from "@/app/reviews/actions";
-import { ReviewFormFields } from "@/components/review-form-fields";
+import { createReview } from "@/modules/reviews/actions";
+import { ReviewFormFields } from "@/modules/reviews/components/review-form-fields";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

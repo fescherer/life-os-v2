@@ -5,7 +5,7 @@ import {
   GogoCollection,
   GogoCollectionItem,
   GogoPurchase,
-} from "@/types/gogo";
+} from "@/modules/gogo-toys/types";
 import { revalidatePath } from "next/cache";
 
 const GOGO_COLLECTIONS_TABLE_ID = "gogo_collections";

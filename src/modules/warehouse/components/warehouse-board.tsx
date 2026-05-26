@@ -6,7 +6,7 @@ import {
   deleteWarehouseBox,
   deleteWarehouseItem,
   renameWarehouseBox,
-} from "@/app/warehouse/actions";
+} from "@/modules/warehouse/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,10 +25,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { PageCoverBanner } from "@/components/page-cover-banner";
-import { WarehouseEmptyState } from "@/components/warehouse-empty-state";
+import { WarehouseEmptyState } from "@/modules/warehouse/components/warehouse-empty-state";
 import { cn } from "@/lib/utils";
 import { RowWithId } from "@/types/table";
-import { WarehouseBox } from "@/types/warehouse";
+import { WarehouseBox } from "@/modules/warehouse/types";
 import { Box, Check, Home, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { FormEvent, useMemo, useState, useTransition } from "react";
 import toast from "react-hot-toast";

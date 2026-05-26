@@ -1,7 +1,7 @@
 "use client";
 
-import { createCoin } from "@/app/coin-collection/actions";
-import { CoinFormFields } from "@/components/coin-form-fields";
+import { createCoin } from "@/modules/coin-collection/actions";
+import { CoinFormFields } from "@/modules/coin-collection/components/coin-form-fields";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

@@ -1,2 +1,2 @@
-export { getFinanceEntryColumns } from "./finance";
-export type { FinanceEntryRow } from "./finance";
+export { getFinanceEntryColumns } from "@/modules/finance/table-columns";
+export type { FinanceEntryRow } from "@/modules/finance/table-columns";

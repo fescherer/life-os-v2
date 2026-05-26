@@ -1,10 +1,10 @@
-import { CoinCollectionGrid } from "@/components/coin-collection-grid";
-import { CoinCreateDialog } from "@/components/coin-create-dialog";
-import { CoinStatsDialog } from "@/components/coin-stats-dialog";
+import { CoinCollectionGrid } from "@/modules/coin-collection/components/coin-collection-grid";
+import { CoinCreateDialog } from "@/modules/coin-collection/components/coin-create-dialog";
+import { CoinStatsDialog } from "@/modules/coin-collection/components/coin-stats-dialog";
 import { ExportCsvButton } from "@/components/export-csv-button";
 import { getTableRows } from "@/lib/db-fn/get";
 import { getSelectOptions } from "@/lib/db-fn/select-options";
-import { Coin } from "@/types/coin";
+import { Coin } from "@/modules/coin-collection/types";
 
 export default async function CoinCollectionPage() {
   const [coins, selectOptions] = await Promise.all([

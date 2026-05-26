@@ -17,7 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { FinanceEntry } from "@/types/finance";
+import { FinanceEntry } from "@/modules/finance/types";
 import { SelectOption } from "@/types/select-option";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";

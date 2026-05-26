@@ -1,7 +1,7 @@
 "use client";
 
-import { deleteReview, updateReview } from "@/app/reviews/actions";
-import { ReviewFormFields } from "@/components/review-form-fields";
+import { deleteReview, updateReview } from "@/modules/reviews/actions";
+import { ReviewFormFields } from "@/modules/reviews/components/review-form-fields";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { Review } from "@/types/review";
+import { Review } from "@/modules/reviews/types";
 import { SelectOption } from "@/types/select-option";
 import { RowWithId } from "@/types/table";
 import {

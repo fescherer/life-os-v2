@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Coin } from "@/types/coin";
+import { Coin } from "@/modules/coin-collection/types";
 import { SelectOption } from "@/types/select-option";
 import { useMemo, useRef, useState } from "react";
 

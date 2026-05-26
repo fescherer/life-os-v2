@@ -4,8 +4,8 @@ import {
   deleteCoin,
   updateCoin,
   updateCoinOwned,
-} from "@/app/coin-collection/actions";
-import { CoinFormFields } from "@/components/coin-form-fields";
+} from "@/modules/coin-collection/actions";
+import { CoinFormFields } from "@/modules/coin-collection/components/coin-form-fields";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,7 +17,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { Coin } from "@/types/coin";
+import { Coin } from "@/modules/coin-collection/types";
 import { SelectOption } from "@/types/select-option";
 import { RowWithId } from "@/types/table";
 import { CheckCircle2, ImageIcon, Info, Pencil, Trash2 } from "lucide-react";

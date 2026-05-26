@@ -1,6 +1,6 @@
 "use client";
 
-import { ReviewCard } from "@/components/review-card";
+import { ReviewCard } from "@/modules/reviews/components/review-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Review } from "@/types/review";
+import { Review } from "@/modules/reviews/types";
 import { SelectOption } from "@/types/select-option";
 import { RowWithId } from "@/types/table";
 import { Search, X } from "lucide-react";

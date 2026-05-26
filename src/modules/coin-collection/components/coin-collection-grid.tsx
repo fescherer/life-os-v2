@@ -1,6 +1,6 @@
 "use client";
 
-import { CoinCard } from "@/components/coin-card";
+import { CoinCard } from "@/modules/coin-collection/components/coin-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Coin } from "@/types/coin";
+import { Coin } from "@/modules/coin-collection/types";
 import { SelectOption } from "@/types/select-option";
 import { RowWithId } from "@/types/table";
 import { Search, X } from "lucide-react";

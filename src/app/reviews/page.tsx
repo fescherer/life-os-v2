@@ -1,9 +1,9 @@
 import { ExportCsvButton } from "@/components/export-csv-button";
-import { ReviewCreateDialog } from "@/components/review-create-dialog";
-import { ReviewsGrid } from "@/components/reviews-grid";
+import { ReviewCreateDialog } from "@/modules/reviews/components/review-create-dialog";
+import { ReviewsGrid } from "@/modules/reviews/components/reviews-grid";
 import { getTableRows } from "@/lib/db-fn/get";
 import { getSelectOptions } from "@/lib/db-fn/select-options";
-import { Review } from "@/types/review";
+import { Review } from "@/modules/reviews/types";
 
 export default async function ReviewsPage() {
   const [reviews, selectOptions] = await Promise.all([

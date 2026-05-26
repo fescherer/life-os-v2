@@ -1,38 +1,14 @@
-import { GogoCollectionBoard } from "@/components/gogo-collection-board";
+import { GogoCollectionBoard } from "@/modules/gogo-toys/components/gogo-collection-board";
 import { getSelectOptions } from "@/lib/db-fn/select-options";
-import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { GogoCollection, GogoPurchase } from "@/types/gogo";
-import { RowWithId } from "@/types/table";
-
-const GOGO_COLLECTIONS_TABLE_ID = "gogo_collections";
-const GOGO_PURCHASES_TABLE_ID = "gogo_purchases";
-
-async function getAppDataRows<T>(tableId: string): Promise<RowWithId<T>[]> {
-  const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("app_data")
-    .select("*")
-    .eq("table_id", tableId)
-    .order("position", { ascending: true });
-
-  if (error) {
-    throw error;
-  }
-
-  return (
-    data?.map((row) => ({
-      id: row.id,
-      created_at: row.created_at,
-      updated_at: row.updated_at,
-      ...(row.data as T),
-    })) ?? []
-  );
-}
+import {
+  getGogoCollections,
+  getGogoPurchases,
+} from "@/modules/gogo-toys/queries";
 
 export default async function GogoToysPage() {
   const [collections, purchases, selectOptions] = await Promise.all([
-    getAppDataRows<GogoCollection>(GOGO_COLLECTIONS_TABLE_ID),
-    getAppDataRows<GogoPurchase>(GOGO_PURCHASES_TABLE_ID),
+    getGogoCollections(),
+    getGogoPurchases(),
     getSelectOptions(),
   ]);
 

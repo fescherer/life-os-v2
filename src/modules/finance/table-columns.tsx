@@ -2,7 +2,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { FinanceRowActions } from "@/components/finance-row-actions";
+import { FinanceRowActions } from "@/modules/finance/components/finance-row-actions";
 import {
   Tooltip,
   TooltipContent,
@@ -10,7 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { FinanceEntry } from "@/types/finance";
+import { FinanceEntry } from "@/modules/finance/types";
 import { SelectOption } from "@/types/select-option";
 import { RowWithId } from "@/types/table";
 import { Column, ColumnDef } from "@tanstack/react-table";

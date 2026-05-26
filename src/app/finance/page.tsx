@@ -1,9 +1,9 @@
 import { ExportCsvButton } from "@/components/export-csv-button";
-import { FinanceEntryForm } from "@/components/finance-entry-form";
-import { FinanceTable } from "@/components/finance-table";
+import { FinanceEntryForm } from "@/modules/finance/components/finance-entry-form";
+import { FinanceTable } from "@/modules/finance/components/finance-table";
 import { getSelectOptions } from "@/lib/db-fn/select-options";
 import { getTableRows } from "@/lib/db-fn/get";
-import { FinanceEntry } from "@/types/finance";
+import { FinanceEntry } from "@/modules/finance/types";
 
 export default async function FinancePage() {
   const [financeEntries, selectOptions] = await Promise.all([

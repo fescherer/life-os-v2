@@ -5,9 +5,9 @@ import {
   deleteFinanceEntry,
   duplicateFinanceEntry,
   updateFinanceEntry,
-} from "@/app/finance/actions";
+} from "@/modules/finance/actions";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
-import { FinanceEntryFields } from "@/components/finance-entry-fields";
+import { FinanceEntryFields } from "@/modules/finance/components/finance-entry-fields";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -31,7 +31,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { FinanceEntry } from "@/types/finance";
+import { FinanceEntry } from "@/modules/finance/types";
 import { SelectOption } from "@/types/select-option";
 import { RowWithId } from "@/types/table";
 import { Copy, MoreHorizontal, Pencil, Trash2 } from "lucide-react";

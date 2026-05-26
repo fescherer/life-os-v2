@@ -9,7 +9,7 @@ import {
   deleteGogoPurchase,
   renameGogoCollection,
   updateGogoCollectionItemQuantity,
-} from "@/app/gogo-toys/actions";
+} from "@/modules/gogo-toys/actions";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,10 +34,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { GogoMetric } from "@/components/gogo-metric";
+import { GogoMetric } from "@/modules/gogo-toys/components/gogo-metric";
 import { PageCoverBanner } from "@/components/page-cover-banner";
 import { cn } from "@/lib/utils";
-import { GogoCollection, GogoCollectionItem, GogoPurchase } from "@/types/gogo";
+import { GogoCollection, GogoCollectionItem, GogoPurchase } from "@/modules/gogo-toys/types";
 import { SelectOption } from "@/types/select-option";
 import { RowWithId } from "@/types/table";
 import {

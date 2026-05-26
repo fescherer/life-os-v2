@@ -1,7 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { WarehouseBox, WarehouseItem } from "@/types/warehouse";
+import { WarehouseBox, WarehouseItem } from "@/modules/warehouse/types";
 import { revalidatePath } from "next/cache";
 
 const WAREHOUSE_TABLE_ID = "warehouse_boxes";

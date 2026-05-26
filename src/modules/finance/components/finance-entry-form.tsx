@@ -1,7 +1,7 @@
 "use client";
 
-import { createFinanceEntry } from "@/app/finance/actions";
-import { FinanceEntryFields } from "@/components/finance-entry-fields";
+import { createFinanceEntry } from "@/modules/finance/actions";
+import { FinanceEntryFields } from "@/modules/finance/components/finance-entry-fields";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

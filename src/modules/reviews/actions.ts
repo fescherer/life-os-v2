@@ -1,7 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { Review } from "@/types/review";
+import { Review } from "@/modules/reviews/types";
 import { revalidatePath } from "next/cache";
 
 const REVIEWS_TABLE_ID = "reviews";

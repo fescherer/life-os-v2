@@ -1,9 +1,9 @@
 "use client";
 
 import { DataTable } from "@/components/data-table";
-import { openFinanceRowEdit } from "@/components/finance-row-actions";
-import { getFinanceEntryColumns } from "@/lib/table-columns";
-import { FinanceEntry } from "@/types/finance";
+import { openFinanceRowEdit } from "@/modules/finance/components/finance-row-actions";
+import { getFinanceEntryColumns } from "@/modules/finance/table-columns";
+import { FinanceEntry } from "@/modules/finance/types";
 import { SelectOption } from "@/types/select-option";
 import { RowWithId } from "@/types/table";
 import { useMemo } from "react";

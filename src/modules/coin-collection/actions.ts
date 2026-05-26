@@ -1,7 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { Coin } from "@/types/coin";
+import { Coin } from "@/modules/coin-collection/types";
 import { revalidatePath } from "next/cache";
 
 const COIN_COLLECTION_TABLE_ID = "coin_collection";
