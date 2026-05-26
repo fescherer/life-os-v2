@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable react/no-multi-comp */
+
 import {
   createGogoCollection,
   createGogoCollectionItem,
@@ -9,8 +11,10 @@ import {
   deleteGogoPurchase,
   renameGogoCollection,
   updateGogoCollectionItemQuantity,
+  updateGogoPurchase,
 } from "@/modules/gogo-toys/actions";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Dialog,
   DialogContent,
@@ -28,6 +32,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -40,7 +49,9 @@ import { cn } from "@/lib/utils";
 import { GogoCollection, GogoCollectionItem, GogoPurchase } from "@/modules/gogo-toys/types";
 import { SelectOption } from "@/types/select-option";
 import { RowWithId } from "@/types/table";
+import { format } from "date-fns";
 import {
+  Calendar as CalendarIcon,
   Check,
   Home,
   Pencil,
@@ -81,6 +92,44 @@ function formatDate(value: string) {
   }).format(date);
 }
 
+function getDate(value?: string) {
+  return value ? new Date(`${value}T00:00:00`) : undefined;
+}
+
+function PurchaseDatePicker({
+  date,
+  onDateChange,
+}: {
+  date?: Date;
+  onDateChange: (date?: Date) => void;
+}) {
+  return (
+    <div>
+      <input
+        name="date"
+        type="hidden"
+        value={date ? format(date, "yyyy-MM-dd") : ""}
+      />
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            data-empty={!date}
+            className="data-[empty=true]:text-muted-foreground w-full justify-start text-left font-normal"
+          >
+            <CalendarIcon className="size-4" />
+            {date ? format(date, "PPP") : <span>Pick a date</span>}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0">
+          <Calendar mode="single" selected={date} onSelect={onDateChange} />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
 export function GogoCollectionBoard({
   collections,
   purchases,
@@ -91,7 +140,12 @@ export function GogoCollectionBoard({
     useState<RowWithId<GogoCollection> | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [coverUrlValue, setCoverUrlValue] = useState("");
+  const [newPurchaseDate, setNewPurchaseDate] = useState<Date | undefined>();
   const [newPurchaseStore, setNewPurchaseStore] = useState("");
+  const [purchaseEditTarget, setPurchaseEditTarget] =
+    useState<RowWithId<GogoPurchase> | null>(null);
+  const [purchaseEditDate, setPurchaseEditDate] = useState<Date | undefined>();
+  const [purchaseEditStore, setPurchaseEditStore] = useState("");
   const [newItemColorType, setNewItemColorType] = useState("");
   const [deleteItemTarget, setDeleteItemTarget] =
     useState<GogoCollectionItem | null>(null);
@@ -215,6 +269,7 @@ export function GogoCollectionBoard({
       try {
         await createGogoPurchase(formData);
         form.reset();
+        setNewPurchaseDate(undefined);
         setNewPurchaseStore("");
         toast.success("Purchase added.");
       } catch (error) {
@@ -235,6 +290,39 @@ export function GogoCollectionBoard({
           error instanceof Error
             ? error.message
             : "Could not delete purchase.",
+        );
+      }
+    });
+  }
+
+  function openPurchaseEditor(purchase: RowWithId<GogoPurchase>) {
+    setPurchaseEditTarget(purchase);
+    setPurchaseEditDate(getDate(purchase.date));
+    setPurchaseEditStore(purchase.store);
+  }
+
+  function handleUpdatePurchase(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!purchaseEditTarget) {
+      return;
+    }
+
+    const formData = new FormData(event.currentTarget);
+    formData.set("id", purchaseEditTarget.id);
+
+    startTransition(async () => {
+      try {
+        await updateGogoPurchase(formData);
+        setPurchaseEditTarget(null);
+        setPurchaseEditDate(undefined);
+        setPurchaseEditStore("");
+        toast.success("Purchase updated.");
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : "Could not update purchase.",
         );
       }
     });
@@ -411,7 +499,10 @@ export function GogoCollectionBoard({
               className="border-border bg-card grid gap-3 rounded-md border p-3 xl:grid-cols-[10rem_1fr_8rem_12rem_auto]"
               onSubmit={handleCreatePurchase}
             >
-              <Input name="date" type="date" aria-label="Purchase date" required />
+              <PurchaseDatePicker
+                date={newPurchaseDate}
+                onDateChange={setNewPurchaseDate}
+              />
               <Input
                 name="description"
                 aria-label="Purchase description"
@@ -455,7 +546,7 @@ export function GogoCollectionBoard({
             </form>
 
             <section className="border-border bg-card overflow-hidden rounded-md border">
-              <div className="bg-muted text-muted-foreground grid grid-cols-[8rem_minmax(12rem,1fr)_8rem_12rem_3rem] text-xs font-medium">
+              <div className="bg-muted text-muted-foreground grid grid-cols-[8rem_minmax(12rem,1fr)_8rem_12rem_5rem] text-xs font-medium">
                 <div className="border-border border-r px-3 py-2">Date</div>
                 <div className="border-border border-r px-3 py-2">
                   Description
@@ -473,7 +564,7 @@ export function GogoCollectionBoard({
                   return (
                     <div
                       key={purchase.id}
-                      className="border-border grid min-h-11 grid-cols-[8rem_minmax(12rem,1fr)_8rem_12rem_3rem] border-t"
+                      className="border-border grid min-h-11 grid-cols-[8rem_minmax(12rem,1fr)_8rem_12rem_5rem] border-t"
                     >
                       <div className="border-border border-r px-3 py-2 text-sm">
                         {formatDate(purchase.date)}
@@ -495,7 +586,17 @@ export function GogoCollectionBoard({
                           {purchase.store}
                         </span>
                       </div>
-                      <div className="grid place-items-center">
+                      <div className="flex items-center justify-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          aria-label={`Edit ${purchase.description}`}
+                          disabled={isPending}
+                          onClick={() => openPurchaseEditor(purchase)}
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
                         <Button
                           type="button"
                           variant="ghost"
@@ -760,6 +861,72 @@ export function GogoCollectionBoard({
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(purchaseEditTarget)}
+        onOpenChange={() => {
+          setPurchaseEditTarget(null);
+          setPurchaseEditDate(undefined);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit purchase</DialogTitle>
+            <DialogDescription>
+              Update the saved date, description, price, or store.
+            </DialogDescription>
+          </DialogHeader>
+          {purchaseEditTarget ? (
+            <form className="grid gap-4" onSubmit={handleUpdatePurchase}>
+              <PurchaseDatePicker
+                date={purchaseEditDate}
+                onDateChange={setPurchaseEditDate}
+              />
+              <Input
+                name="description"
+                aria-label="Purchase description"
+                defaultValue={purchaseEditTarget.description}
+                required
+              />
+              <Input
+                name="price"
+                type="number"
+                step="0.01"
+                min="0"
+                aria-label="Purchase price"
+                defaultValue={purchaseEditTarget.price}
+                required
+              />
+              <Select
+                name="store"
+                value={purchaseEditStore}
+                onValueChange={setPurchaseEditStore}
+                required
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Store" />
+                </SelectTrigger>
+                <SelectContent>
+                  {storeOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.value}>
+                      <span
+                        className="size-3 rounded-full"
+                        style={{ backgroundColor: option.color }}
+                      />
+                      {option.value}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <DialogFooter showCloseButton>
+                <Button type="submit" disabled={isPending}>
+                  {isPending ? "Saving..." : "Save"}
+                </Button>
+              </DialogFooter>
+            </form>
+          ) : null}
         </DialogContent>
       </Dialog>
 

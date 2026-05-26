@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Review } from "@/modules/reviews/types";
+import { REVIEW_STATUSES, Review, ReviewStatus } from "@/modules/reviews/types";
 import { SelectOption } from "@/types/select-option";
 import { RowWithId } from "@/types/table";
 import { Search, X } from "lucide-react";
@@ -27,6 +27,7 @@ function getSearchText(review: RowWithId<Review>) {
   return [
     review.title,
     review.cover_image,
+    review.status ?? "Planning",
     review.type,
     review.review,
     review.review_date,
@@ -41,6 +42,7 @@ function getSearchText(review: RowWithId<Review>) {
 export function ReviewsGrid({ reviews, selectOptions }: ReviewsGridProps) {
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
+  const [status, setStatus] = useState<"all" | ReviewStatus>("all");
   const reviewTypes = useMemo(
     () =>
       selectOptions.filter(
@@ -56,16 +58,18 @@ export function ReviewsGrid({ reviews, selectOptions }: ReviewsGridProps) {
       const matchesSearch =
         !normalizedQuery || getSearchText(review).includes(normalizedQuery);
       const matchesType = type === "all" || review.type === type;
+      const matchesStatus =
+        status === "all" || (review.status ?? "Planning") === status;
 
-      return matchesSearch && matchesType;
+      return matchesSearch && matchesType && matchesStatus;
     });
-  }, [reviews, query, type]);
+  }, [reviews, query, status, type]);
 
-  const hasFilters = query || type !== "all";
+  const hasFilters = query || type !== "all" || status !== "all";
 
   return (
     <section className="grid gap-4">
-      <div className="border-border bg-card grid gap-3 rounded-md border p-3 sm:grid-cols-[minmax(16rem,1fr)_auto_auto] sm:items-center">
+      <div className="border-border bg-card grid gap-3 rounded-md border p-3 sm:grid-cols-[minmax(16rem,1fr)_auto_auto_auto] sm:items-center">
         <label className="relative block">
           <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
@@ -93,6 +97,26 @@ export function ReviewsGrid({ reviews, selectOptions }: ReviewsGridProps) {
           </SelectContent>
         </Select>
 
+        <Select
+          value={status}
+          onValueChange={(value) => setStatus(value as "all" | ReviewStatus)}
+        >
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectLabel>Status</SelectLabel>
+              <SelectItem value="all">All status</SelectItem>
+              {REVIEW_STATUSES.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+
         <Button
           type="button"
           variant="ghost"
@@ -101,6 +125,7 @@ export function ReviewsGrid({ reviews, selectOptions }: ReviewsGridProps) {
           onClick={() => {
             setQuery("");
             setType("all");
+            setStatus("all");
           }}
         >
           <X className="size-4" />

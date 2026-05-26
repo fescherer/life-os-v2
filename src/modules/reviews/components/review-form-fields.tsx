@@ -9,8 +9,15 @@ import {
   ComboboxList,
 } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Review } from "@/modules/reviews/types";
+import { REVIEW_STATUSES, Review, ReviewStatus } from "@/modules/reviews/types";
 import { SelectOption } from "@/types/select-option";
 import { useMemo, useRef, useState } from "react";
 
@@ -55,6 +62,9 @@ export function ReviewFormFields({
     return configuredTypes;
   }, [defaultType, types]);
   const [type, setType] = useState<string | null>(defaultType ?? null);
+  const [status, setStatus] = useState<ReviewStatus>(
+    review?.status ?? "Planning",
+  );
   const [stars, setStars] = useState(review?.review_stars ?? 0);
   const comboboxPortalContainerRef = useRef<HTMLDivElement>(null);
 
@@ -87,6 +97,27 @@ export function ReviewFormFields({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid gap-2">
+          <span className="text-sm font-medium">Status</span>
+          <Select
+            name="status"
+            value={status}
+            onValueChange={(value) => setStatus(value as ReviewStatus)}
+            required
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {REVIEW_STATUSES.map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="grid gap-2">
           <span className="text-sm font-medium">Type</span>
           <Combobox
@@ -128,7 +159,9 @@ export function ReviewFormFields({
             </ComboboxContent>
           </Combobox>
         </div>
+      </div>
 
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
           <label className="text-sm font-medium" htmlFor="review_stars">
             Rating ({(stars / 2).toFixed(1)})
@@ -145,9 +178,6 @@ export function ReviewFormFields({
             required
           />
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="grid gap-2">
           <label className="text-sm font-medium" htmlFor="finished_date">
             Finished date

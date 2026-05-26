@@ -329,22 +329,7 @@ export async function deleteGogoCollectionItem(
 }
 
 export async function createGogoPurchase(formData: FormData) {
-  const purchase: GogoPurchase = {
-    date: getString(formData, "date"),
-    description: getString(formData, "description"),
-    price: getNumber(formData, "price"),
-    store: getString(formData, "store"),
-  };
-
-  if (
-    !purchase.date ||
-    !purchase.description ||
-    !purchase.store ||
-    !Number.isFinite(purchase.price)
-  ) {
-    throw new Error("Date, description, price, and store are required.");
-  }
-
+  const purchase = getGogoPurchaseInput(formData);
   const { supabase, userId } = await getAuthenticatedSupabase();
 
   await assertSelectOption(supabase, userId, STORE_SELECT_ID, purchase.store);
@@ -368,6 +353,52 @@ export async function createGogoPurchase(formData: FormData) {
     position: (lastRow?.position ?? -1) + 1,
     data: purchase,
   });
+
+  if (error) {
+    throw error;
+  }
+
+  revalidatePath("/gogo-toys");
+}
+
+function getGogoPurchaseInput(formData: FormData): GogoPurchase {
+  const purchase = {
+    date: getString(formData, "date"),
+    description: getString(formData, "description"),
+    price: getNumber(formData, "price"),
+    store: getString(formData, "store"),
+  };
+
+  if (
+    !purchase.date ||
+    !purchase.description ||
+    !purchase.store ||
+    !Number.isFinite(purchase.price)
+  ) {
+    throw new Error("Date, description, price, and store are required.");
+  }
+
+  return purchase;
+}
+
+export async function updateGogoPurchase(formData: FormData) {
+  const id = getString(formData, "id");
+  const purchase = getGogoPurchaseInput(formData);
+
+  if (!id) {
+    throw new Error("Purchase id is required.");
+  }
+
+  const { supabase, userId } = await getAuthenticatedSupabase();
+
+  await assertSelectOption(supabase, userId, STORE_SELECT_ID, purchase.store);
+
+  const { error } = await supabase
+    .from("app_data")
+    .update({ data: purchase })
+    .eq("table_id", GOGO_PURCHASES_TABLE_ID)
+    .eq("user_id", userId)
+    .eq("id", id);
 
   if (error) {
     throw error;

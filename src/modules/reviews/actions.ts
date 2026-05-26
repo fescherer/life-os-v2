@@ -1,7 +1,7 @@
 "use server";
 
 import { createSupabaseServerClient } from "@/lib/supabase-server";
-import { Review } from "@/modules/reviews/types";
+import { REVIEW_STATUSES, Review, ReviewStatus } from "@/modules/reviews/types";
 import { revalidatePath } from "next/cache";
 
 const REVIEWS_TABLE_ID = "reviews";
@@ -37,9 +37,20 @@ function getReviewStars(formData: FormData) {
   return value;
 }
 
+function getReviewStatus(formData: FormData): ReviewStatus {
+  const status = getString(formData, "status");
+
+  if (!REVIEW_STATUSES.includes(status as ReviewStatus)) {
+    throw new Error("Status must be Planning, On Going, or Completed.");
+  }
+
+  return status as ReviewStatus;
+}
+
 function getReviewInput(formData: FormData): Review {
   const review_date = getIsoDate(formData, "review_date");
   const finished_date = getIsoDate(formData, "finished_date");
+  const status = getReviewStatus(formData);
   const type = getString(formData, "type");
   const title = getString(formData, "title");
   const cover_image = getString(formData, "cover_image");
@@ -53,6 +64,7 @@ function getReviewInput(formData: FormData): Review {
   return {
     review_date,
     finished_date,
+    status,
     type,
     title,
     cover_image: cover_image || undefined,

@@ -48,6 +48,10 @@ function formatRating(stars: number) {
   return (stars / 2).toFixed(1).replace(/\.0$/, "");
 }
 
+function getReviewStatus(review: RowWithId<Review>) {
+  return review.status ?? "Planning";
+}
+
 function getStarFill(stars: number, index: number) {
   const valueOutOfFive = stars / 4;
 
@@ -84,6 +88,7 @@ export function ReviewCard({ review, selectOptions }: ReviewCardProps) {
     (option) =>
       option.select_identifier === "review_type" && option.value === review.type,
   );
+  const status = getReviewStatus(review);
 
   function handleUpdate(formData: FormData) {
     formData.set("id", review.id);
@@ -148,11 +153,16 @@ export function ReviewCard({ review, selectOptions }: ReviewCardProps) {
               {review.title}
             </span>
           </span>
-          <span className="flex items-center gap-2">
-            <span className="text-sm font-semibold">
-              {formatRating(review.review_stars)}/10
+          <span className="flex flex-wrap items-center gap-2">
+            <span className="rounded-md bg-white/15 px-2 py-1 text-xs font-semibold ring-1 ring-white/20">
+              {status}
             </span>
-            {renderRatingStars(review.review_stars)}
+            <span className="flex items-center gap-2">
+              <span className="text-sm font-semibold">
+                {formatRating(review.review_stars)}/10
+              </span>
+              {renderRatingStars(review.review_stars)}
+            </span>
           </span>
         </span>
       </button>
@@ -182,6 +192,9 @@ export function ReviewCard({ review, selectOptions }: ReviewCardProps) {
                   />
                   <span className="text-sm font-semibold uppercase">
                     {review.type}
+                  </span>
+                  <span className="rounded-md bg-white/15 px-2 py-1 text-xs font-semibold">
+                    {status}
                   </span>
                 </div>
                 <DialogHeader>
@@ -224,7 +237,16 @@ export function ReviewCard({ review, selectOptions }: ReviewCardProps) {
               {review.review || "No written review yet."}
             </p>
 
-            <div className="border-border bg-secondary/50 grid gap-3 rounded-md border p-4 text-sm sm:grid-cols-2">
+            <div className="border-border bg-secondary/50 grid gap-3 rounded-md border p-4 text-sm sm:grid-cols-3">
+              <div className="flex items-center gap-2">
+                <div className="bg-primary/10 text-primary grid size-8 place-items-center rounded-md text-xs font-semibold">
+                  St
+                </div>
+                <div className="min-w-0">
+                  <p className="text-muted-foreground text-xs">Status</p>
+                  <p className="truncate font-medium">{status}</p>
+                </div>
+              </div>
               <div className="flex items-center gap-2">
                 <CalendarCheck2 className="text-muted-foreground size-4" />
                 <div className="min-w-0">
