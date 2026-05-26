@@ -17,6 +17,7 @@ import {
   LayoutGrid,
   Menu,
   PackageCheck,
+  BellRing,
   Settings,
   UserCircle,
   Warehouse,
@@ -58,6 +59,11 @@ const mainLinks = [
     href: "/packaging",
     label: "Packaging",
     icon: PackageCheck,
+  },
+  {
+    href: "/reminders",
+    label: "Reminders",
+    icon: BellRing,
   },
   {
     href: "/reviews",

@@ -54,4 +54,10 @@ export const SELECTS = [
     identifier: "delivery_company",
     name: "delivery_company",
   },
+  {
+    id: 10,
+    label: "Reminder Type",
+    identifier: "reminder_type",
+    name: "reminder_type",
+  },
 ] as const;

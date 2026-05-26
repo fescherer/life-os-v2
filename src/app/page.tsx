@@ -1,11 +1,19 @@
 import { getTableRows } from "@/lib/db-fn/get";
+import { getSelectOptions } from "@/lib/db-fn/select-options";
 import {
   getGogoCollections,
   getGogoPurchases,
 } from "@/modules/gogo-toys/queries";
+import { ReminderTypeBadge } from "@/modules/reminders/components/reminder-type-badge";
+import {
+  getDueReminders,
+  getReminderOccurrenceLabel,
+} from "@/modules/reminders/recurrence";
+import { ReminderEntry } from "@/modules/reminders/types";
 import { getWarehouseBoxes } from "@/modules/warehouse/queries";
 import {
   Archive,
+  BellRing,
   Boxes,
   CircleDollarSign,
   Clapperboard,
@@ -53,6 +61,12 @@ const overviewCards = [
     icon: PackageCheck,
   },
   {
+    href: "/reminders",
+    label: "Reminders",
+    description: "Recurring dates and alerts",
+    icon: BellRing,
+  },
+  {
     href: "/warehouse",
     label: "Warehouse",
     description: "Sheets and stored items",
@@ -68,6 +82,8 @@ export default async function Home() {
     coins,
     reviews,
     packagingEntries,
+    reminders,
+    selectOptions,
     gogoCollections,
     gogoPurchases,
     warehouseBoxes,
@@ -78,6 +94,8 @@ export default async function Home() {
     getTableRows("coin_collection"),
     getTableRows("reviews"),
     getTableRows("packaging_tracker"),
+    getTableRows<ReminderEntry>("reminders"),
+    getSelectOptions(),
     getGogoCollections(),
     getGogoPurchases(),
     getWarehouseBoxes(),
@@ -89,12 +107,14 @@ export default async function Home() {
     ["/coin-collection", coins.length],
     ["/reviews", reviews.length],
     ["/packaging", packagingEntries.length],
+    ["/reminders", reminders.length],
     ["/gogo-toys", gogoCollections.length + gogoPurchases.length],
     ["/warehouse", warehouseBoxes.reduce(
       (total, box) => total + box.items.length,
       warehouseBoxes.length,
     )],
   ]);
+  const dueReminders = getDueReminders(reminders);
 
   return (
     <main className="grid gap-6 p-6">
@@ -132,6 +152,50 @@ export default async function Home() {
             </Link>
           );
         })}
+      </section>
+
+      <section className="grid gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Today&apos;s Reminders</h2>
+          <p className="text-muted-foreground text-sm">
+            Recurring dates that match today.
+          </p>
+        </div>
+
+        <div className="border-border bg-card text-card-foreground overflow-hidden rounded-md border">
+          {dueReminders.length > 0 ? (
+            <div>
+              {dueReminders.map((reminder) => (
+                <div
+                  key={reminder.id}
+                  className="border-border grid gap-2 border-t p-4 first:border-t-0 sm:grid-cols-[1fr_auto] sm:items-center"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="truncate font-medium">
+                        {reminder.description}
+                      </h3>
+                      <ReminderTypeBadge
+                        reminderType={reminder.reminder_type}
+                        selectOptions={selectOptions}
+                      />
+                    </div>
+                    <p className="text-muted-foreground text-sm">
+                      {getReminderOccurrenceLabel(reminder)}
+                    </p>
+                  </div>
+                  <span className="bg-secondary text-secondary-foreground inline-flex h-7 items-center rounded-4xl px-3 text-xs font-medium capitalize">
+                    {reminder.notification_frequency}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-muted-foreground p-4 text-sm">
+              No reminders for today.
+            </p>
+          )}
+        </div>
       </section>
     </main>
   );
