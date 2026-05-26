@@ -4,8 +4,21 @@ import { createSupabaseServerClient } from "@/lib/supabase-server";
 import { SELECTS } from "@/lib/selects";
 import { revalidatePath } from "next/cache";
 
+const SELECT_OPTION_PATHS = [
+  "/settings",
+  "/finance",
+  "/finance-assets",
+  "/coin-collection",
+  "/reviews",
+  "/gogo-toys",
+];
+
 function getString(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
+}
+
+function revalidateSelectOptionPaths() {
+  SELECT_OPTION_PATHS.forEach((path) => revalidatePath(path));
 }
 
 export async function createSelectOption(formData: FormData) {
@@ -45,7 +58,45 @@ export async function createSelectOption(formData: FormData) {
     throw error;
   }
 
-  revalidatePath("/settings");
+  revalidateSelectOptionPaths();
+}
+
+export async function updateSelectOption(formData: FormData) {
+  const id = Number(formData.get("id"));
+  const value = getString(formData, "value");
+  const color = getString(formData, "color") || "#71717a";
+
+  if (!Number.isInteger(id)) {
+    throw new Error("Invalid option id.");
+  }
+
+  if (!value) {
+    throw new Error("Option value is required.");
+  }
+
+  if (!/^#[0-9A-Fa-f]{6}$/.test(color)) {
+    throw new Error("Color must be a valid hex color.");
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Unauthorized.");
+  }
+
+  const { error } = await supabase
+    .from("select_options")
+    .update({ value, color })
+    .eq("id", id);
+
+  if (error) {
+    throw error;
+  }
+
+  revalidateSelectOptionPaths();
 }
 
 export async function deleteSelectOption(formData: FormData) {
@@ -70,5 +121,5 @@ export async function deleteSelectOption(formData: FormData) {
     throw error;
   }
 
-  revalidatePath("/settings");
+  revalidateSelectOptionPaths();
 }

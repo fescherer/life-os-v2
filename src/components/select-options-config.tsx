@@ -5,10 +5,11 @@ import { Input } from "@/components/ui/input";
 import {
   createSelectOption,
   deleteSelectOption,
+  updateSelectOption,
 } from "@/app/settings/actions";
 import { SELECTS } from "@/lib/selects";
 import { SelectOption } from "@/types/select-option";
-import { Plus, Trash2, X } from "lucide-react";
+import { Pencil, Plus, Trash2, X } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 
 type SelectIdentifier = (typeof SELECTS)[number]["identifier"];
@@ -22,6 +23,7 @@ export function SelectOptionsConfig({ options }: SelectOptionsConfigProps) {
     SELECTS[0].identifier,
   );
   const [isOpen, setIsOpen] = useState(false);
+  const [editingOption, setEditingOption] = useState<SelectOption | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
 
   const selectedSelect = SELECTS.find(
@@ -39,6 +41,11 @@ export function SelectOptionsConfig({ options }: SelectOptionsConfigProps) {
   async function addOption(formData: FormData) {
     await createSelectOption(formData);
     setIsOpen(false);
+  }
+
+  async function saveOption(formData: FormData) {
+    await updateSelectOption(formData);
+    setEditingOption(null);
   }
 
   function removeOption(id: number) {
@@ -105,15 +112,26 @@ export function SelectOptionsConfig({ options }: SelectOptionsConfigProps) {
                     </p>
                   </div>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  disabled={isDeleting}
-                  onClick={() => removeOption(option.id)}
-                >
-                  <span className="sr-only">Remove option</span>
-                  <Trash2 className="size-4" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => setEditingOption(option)}
+                  >
+                    <span className="sr-only">Edit option</span>
+                    <Pencil className="size-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    disabled={isDeleting}
+                    onClick={() => removeOption(option.id)}
+                  >
+                    <span className="sr-only">Remove option</span>
+                    <Trash2 className="size-4" />
+                  </Button>
+                </div>
               </div>
             ))
           ) : (
@@ -181,6 +199,66 @@ export function SelectOptionsConfig({ options }: SelectOptionsConfigProps) {
                   Cancel
                 </Button>
                 <Button type="submit">Add</Button>
+              </div>
+            </form>
+          </div>
+        ) : null}
+
+        {editingOption ? (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+            <form
+              action={saveOption}
+              className="border-border bg-background w-full max-w-sm rounded-md border p-4 shadow-lg"
+            >
+              <div className="flex items-center justify-between gap-4">
+                <h3 className="text-sm font-semibold">Edit option</h3>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon-sm"
+                  onClick={() => setEditingOption(null)}
+                >
+                  <span className="sr-only">Close</span>
+                  <X className="size-4" />
+                </Button>
+              </div>
+
+              <div className="mt-4 space-y-3">
+                <input type="hidden" name="id" value={editingOption.id} />
+                <label
+                  htmlFor="edit-select-option-value"
+                  className="block text-sm font-medium"
+                >
+                  Name
+                  <Input
+                    id="edit-select-option-value"
+                    name="value"
+                    className="mt-1"
+                    defaultValue={editingOption.value}
+                    autoFocus
+                    required
+                  />
+                </label>
+                <label className="block text-sm font-medium">
+                  Color
+                  <Input
+                    name="color"
+                    type="color"
+                    defaultValue={editingOption.color}
+                    className="mt-1"
+                  />
+                </label>
+              </div>
+
+              <div className="mt-5 flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEditingOption(null)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">Save</Button>
               </div>
             </form>
           </div>
