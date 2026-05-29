@@ -8,6 +8,7 @@ import {
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  Row,
   SortingState,
   useReactTable,
 } from "@tanstack/react-table";
@@ -29,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -37,6 +39,7 @@ interface DataTableProps<TData, TValue> {
   filterPlaceholder?: string;
   minHeightClassName?: string;
   onRowDoubleClick?: (row: TData) => void;
+  renderMobileRow?: (row: Row<TData>) => React.ReactNode;
 }
 
 export function DataTable<TData, TValue>({
@@ -46,6 +49,7 @@ export function DataTable<TData, TValue>({
   filterPlaceholder = "Filter...",
   minHeightClassName = "min-h-[42rem]",
   onRowDoubleClick,
+  renderMobileRow,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -82,6 +86,7 @@ export function DataTable<TData, TValue>({
   const firstVisibleItem = totalItems > 0 ? pageIndex * pageSize + 1 : 0;
   const lastVisibleItem =
     totalItems > 0 ? Math.min(firstVisibleItem + visibleItems - 1, totalItems) : 0;
+  const hasMobileRows = Boolean(renderMobileRow);
 
   return (
     <div>
@@ -91,15 +96,35 @@ export function DataTable<TData, TValue>({
             placeholder={filterPlaceholder}
             value={(filter.getFilterValue() as string) ?? ""}
             onChange={(event) => filter.setFilterValue(event.target.value)}
-            className="max-w-sm"
+            className="w-full sm:max-w-sm"
           />
         </div>
       ) : null}
 
       <div
-        className={`bg-background flex ${minHeightClassName} flex-col overflow-hidden rounded-md border`}
+        className={cn(
+          "bg-background flex flex-col overflow-hidden rounded-md border",
+          !hasMobileRows && minHeightClassName,
+          hasMobileRows && "min-h-[28rem] md:min-h-[42rem]",
+        )}
       >
-        <div className="flex-1 overflow-hidden">
+        {renderMobileRow ? (
+          <div className="md:hidden">
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <div key={row.id} className="border-t first:border-t-0">
+                  {renderMobileRow(row)}
+                </div>
+              ))
+            ) : (
+              <div className="text-muted-foreground px-4 py-12 text-center text-sm">
+                No results.
+              </div>
+            )}
+          </div>
+        ) : null}
+
+        <div className={cn("flex-1 overflow-hidden", hasMobileRows && "hidden md:block")}>
           <Table className="table-fixed">
             <TableHeader className="bg-muted/40">
               {table.getHeaderGroups().map((headerGroup) => (
