@@ -31,6 +31,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { DelayedCachedBackgroundImage } from "@/components/delayed-cached-background-image";
 import {
   Popover,
   PopoverContent,
@@ -745,13 +746,9 @@ export function GogoCollectionBoard({
                           </div>
                         </div>
                         {item.imageUrl ? (
-                          <div
+                          <DelayedCachedBackgroundImage
+                            src={item.imageUrl}
                             className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
-                            style={{
-                              backgroundImage: `url(${JSON.stringify(
-                                item.imageUrl,
-                              )})`,
-                            }}
                           />
                         ) : null}
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.5),transparent_34%),linear-gradient(to_top,rgba(0,0,0,0.82),rgba(0,0,0,0.16),transparent)] transition-transform duration-300 group-hover:scale-105" />

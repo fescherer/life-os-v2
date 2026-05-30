@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { AppToaster } from "@/components/app-toaster";
 import { AppSidebar } from "@/components/app-sidebar";
+import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -19,8 +20,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  applicationName: "Life OS",
   title: "Life OS",
   description: "Personal workspace",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Life OS",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default async function RootLayout({
@@ -51,6 +61,7 @@ export default async function RootLayout({
           <div className="min-w-0 flex-1 pt-14 md:pt-0">{children}</div>
         </div>
         <AppToaster />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );

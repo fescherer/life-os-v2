@@ -3,6 +3,7 @@
 import { deleteReview, updateReview } from "@/modules/reviews/actions";
 import { ReviewFormFields } from "@/modules/reviews/components/review-form-fields";
 import { Button } from "@/components/ui/button";
+import { DelayedCachedBackgroundImage } from "@/components/delayed-cached-background-image";
 import {
   Dialog,
   DialogContent,
@@ -129,11 +130,9 @@ export function ReviewCard({ review, selectOptions }: ReviewCardProps) {
         aria-label={`Open details for ${review.title}`}
       >
         {review.cover_image ? (
-          <span
+          <DelayedCachedBackgroundImage
+            src={review.cover_image}
             className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
-            style={{
-              backgroundImage: `url(${JSON.stringify(review.cover_image)})`,
-            }}
           />
         ) : (
           <span className="bg-secondary absolute inset-0 grid place-items-center">
@@ -172,11 +171,9 @@ export function ReviewCard({ review, selectOptions }: ReviewCardProps) {
           <div className="grid gap-5">
             <div className="bg-muted relative aspect-[16/9] overflow-hidden rounded-md">
               {review.cover_image ? (
-                <div
+                <DelayedCachedBackgroundImage
+                  src={review.cover_image}
                   className="absolute inset-0 bg-cover bg-center"
-                  style={{
-                    backgroundImage: `url(${JSON.stringify(review.cover_image)})`,
-                  }}
                 />
               ) : (
                 <div className="text-muted-foreground grid h-full place-items-center">

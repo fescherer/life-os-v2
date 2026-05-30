@@ -7,6 +7,7 @@ import {
 } from "@/modules/coin-collection/actions";
 import { CoinFormFields } from "@/modules/coin-collection/components/coin-form-fields";
 import { Button } from "@/components/ui/button";
+import { DelayedCachedImage } from "@/components/delayed-cached-image";
 import {
   Dialog,
   DialogContent,
@@ -165,7 +166,7 @@ export function CoinCard({ coin, selectOptions }: CoinCardProps) {
             </span>
           ) : null}
           {coin.imageUrl ? (
-            <img
+            <DelayedCachedImage
               src={coin.imageUrl}
               alt={coin.name}
               className="h-full w-full object-contain p-2"
