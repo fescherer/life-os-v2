@@ -17,7 +17,6 @@ import { Review } from "@/modules/reviews/types";
 import { SelectOption } from "@/types/select-option";
 import { RowWithId } from "@/types/table";
 import {
-  CalendarCheck2,
   CalendarDays,
   Pencil,
   Star,
@@ -167,102 +166,84 @@ export function ReviewCard({ review, selectOptions }: ReviewCardProps) {
       </button>
 
       <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-3xl">
-          <div className="grid gap-5">
-            <div className="bg-muted relative aspect-[16/9] overflow-hidden rounded-md">
-              {review.cover_image ? (
-                <DelayedCachedBackgroundImage
-                  src={review.cover_image}
-                  className="absolute inset-0 bg-cover bg-center"
-                />
-              ) : (
-                <div className="text-muted-foreground grid h-full place-items-center">
-                  No cover image
-                </div>
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 grid gap-3 p-5 text-white">
-                <div className="flex items-center gap-2">
+        <DialogContent className="max-h-[calc(100vh-2rem)] overflow-y-auto p-4 sm:max-w-3xl sm:p-6">
+          <div className="grid gap-5 md:grid-cols-[minmax(180px,260px)_minmax(0,420px)]">
+            <aside className="md:self-start">
+              <div className="bg-muted relative aspect-[2/3] overflow-hidden rounded-md">
+                {review.cover_image ? (
+                  <DelayedCachedBackgroundImage
+                    src={review.cover_image}
+                    className="absolute inset-0 bg-cover bg-center"
+                  />
+                ) : (
+                  <div className="text-muted-foreground grid h-full place-items-center px-6 text-center font-medium">
+                    No cover image
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/5 to-black/35" />
+                <div className="absolute top-3 left-3 flex items-center gap-2 rounded-md bg-black/45 px-2.5 py-1.5 text-xs font-semibold text-white ring-1 ring-white/15 backdrop-blur-sm">
                   <span
-                    className="size-3 rounded-full border border-white/50"
+                    className="size-2.5 shrink-0 rounded-full border border-white/40"
                     style={{ backgroundColor: typeOption?.color ?? "#71717a" }}
                   />
-                  <span className="text-sm font-semibold uppercase">
-                    {review.type}
+                  <span className="truncate">{review.type}</span>
+                </div>
+                <div className="absolute right-3 bottom-3 left-3 flex items-center gap-2 rounded-md bg-black/45 px-2.5 py-1.5 text-xs font-medium text-white ring-1 ring-white/15 backdrop-blur-sm">
+                  <CalendarDays className="size-3.5 shrink-0" />
+                  <span className="text-white/70">Reviewed</span>
+                  <span className="truncate font-semibold">
+                    {formatDate(review.review_date)}
                   </span>
-                  <span className="rounded-md bg-white/15 px-2 py-1 text-xs font-semibold">
+                </div>
+              </div>
+            </aside>
+
+            <section className="flex min-w-0 flex-col gap-4">
+              <DialogHeader className="gap-2 pr-10">
+                <div className="flex">
+                  <span className="bg-secondary text-secondary-foreground rounded-md px-2.5 py-1 text-xs font-semibold">
                     {status}
                   </span>
                 </div>
-                <DialogHeader>
-                  <DialogTitle className="text-2xl leading-tight text-white">
-                    {review.title}
-                  </DialogTitle>
-                  <DialogDescription className="sr-only">
-                    Full review information for {review.title}.
-                  </DialogDescription>
-                </DialogHeader>
-              </div>
-            </div>
+                <DialogTitle className="text-2xl leading-tight font-semibold">
+                  {review.title}
+                </DialogTitle>
+                <DialogDescription className="sr-only">
+                  Full review information for {review.title}.
+                </DialogDescription>
+              </DialogHeader>
 
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                <span className="text-lg font-semibold">
-                  {formatRating(review.review_stars)}/10
-                </span>
-                {renderRatingStars(review.review_stars)}
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-semibold">
+                    {formatRating(review.review_stars)}/10
+                  </span>
+                  {renderRatingStars(review.review_stars)}
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsDetailsOpen(false);
+                    setIsEditOpen(true);
+                  }}
+                >
+                  <Pencil className="size-4" />
+                  Edit
+                </Button>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setIsDetailsOpen(false);
-                  setIsEditOpen(true);
-                }}
-              >
-                <Pencil className="size-4" />
-                Edit
-              </Button>
-            </div>
 
-            <p
-              className={cn(
-                "text-muted-foreground text-sm leading-6",
-                review.review ? "" : "italic",
-              )}
-            >
-              {review.review || "No written review yet."}
-            </p>
-
-            <div className="border-border bg-secondary/50 grid gap-3 rounded-md border p-4 text-sm sm:grid-cols-3">
-              <div className="flex items-center gap-2">
-                <div className="bg-primary/10 text-primary grid size-8 place-items-center rounded-md text-xs font-semibold">
-                  St
-                </div>
-                <div className="min-w-0">
-                  <p className="text-muted-foreground text-xs">Status</p>
-                  <p className="truncate font-medium">{status}</p>
-                </div>
+              <div className="border-border bg-card/70 min-h-40 rounded-md border p-4">
+                <p
+                  className={cn(
+                    "text-muted-foreground text-sm leading-6 whitespace-pre-wrap",
+                    review.review ? "" : "italic",
+                  )}
+                >
+                  {review.review || "No written review yet."}
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <CalendarCheck2 className="text-muted-foreground size-4" />
-                <div className="min-w-0">
-                  <p className="text-muted-foreground text-xs">Finished</p>
-                  <p className="truncate font-medium">
-                    {formatDate(review.finished_date)}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <CalendarDays className="text-muted-foreground size-4" />
-                <div className="min-w-0">
-                  <p className="text-muted-foreground text-xs">Reviewed</p>
-                  <p className="truncate font-medium">
-                    {formatDate(review.review_date)}
-                  </p>
-                </div>
-              </div>
-            </div>
+            </section>
           </div>
         </DialogContent>
       </Dialog>
