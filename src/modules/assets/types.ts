@@ -7,7 +7,9 @@ export type Asset = {
 export type AssetEntry = {
   date: string;
   value: number;
-  bank: number;
+  quantity?: number;
+  costs?: number;
+  bank?: number;
   type: number;
   asset_id: string;
 };

@@ -58,6 +58,24 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
+function formatQuantity(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    maximumFractionDigits: 6,
+  }).format(value);
+}
+
+function getEntryQuantity(entry: AssetEntry) {
+  return entry.quantity ?? 1;
+}
+
+function getEntryCosts(entry: AssetEntry) {
+  return entry.costs ?? 0;
+}
+
+function getEntryTotal(entry: AssetEntry) {
+  return entry.value * getEntryQuantity(entry) + getEntryCosts(entry);
+}
+
 function getSelectOption(
   selectOptions: SelectOption[],
   selectIdentifier: string,
@@ -237,7 +255,7 @@ export function getAssetEntryColumns(
     {
       accessorKey: "value",
       size: 140,
-      header: ({ column }) => <SortableHeader column={column} label="Valor" />,
+      header: ({ column }) => <SortableHeader column={column} label="Preco" />,
       cell: ({ row }) =>
         Number.isFinite(row.original.value) ? (
           <div className="text-center font-medium">
@@ -250,19 +268,40 @@ export function getAssetEntryColumns(
         ),
     },
     {
-      accessorKey: "bank",
-      size: 150,
-      header: ({ column }) => <SortableHeader column={column} label="Banco" />,
+      accessorKey: "quantity",
+      size: 130,
+      header: ({ column }) => (
+        <SortableHeader column={column} label="Quantidade" />
+      ),
       sortingFn: (rowA, rowB) =>
-        getSelectOptionValue(selectOptions, "bank", rowA.original.bank)
-          .localeCompare(
-            getSelectOptionValue(selectOptions, "bank", rowB.original.bank),
-          ),
+        getEntryQuantity(rowA.original) - getEntryQuantity(rowB.original),
       cell: ({ row }) => (
-        <SelectBadge
-          option={getSelectOption(selectOptions, "bank", row.original.bank)}
-          fallback={row.original.bank}
-        />
+        <div className="text-center font-medium">
+          {formatQuantity(getEntryQuantity(row.original))}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "costs",
+      size: 140,
+      header: ({ column }) => <SortableHeader column={column} label="Custos" />,
+      sortingFn: (rowA, rowB) =>
+        getEntryCosts(rowA.original) - getEntryCosts(rowB.original),
+      cell: ({ row }) => (
+        <div className="text-center font-medium">
+          {formatCurrency(getEntryCosts(row.original))}
+        </div>
+      ),
+    },
+    {
+      id: "total",
+      accessorFn: (row) => getEntryTotal(row),
+      size: 150,
+      header: ({ column }) => <SortableHeader column={column} label="Total" />,
+      cell: ({ row }) => (
+        <div className="text-center font-semibold">
+          {formatCurrency(getEntryTotal(row.original))}
+        </div>
       ),
     },
     {

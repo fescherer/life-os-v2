@@ -92,22 +92,37 @@ function getAssetInput(formData: FormData) {
 function getAssetEntryInput(formData: FormData) {
   const date = getString(formData, "date");
   const value = Number(getString(formData, "value"));
+  const quantity = Number(getString(formData, "quantity"));
+  const costsInput = getString(formData, "costs");
+  const costs = costsInput ? Number(costsInput) : 0;
   const assetId = getString(formData, "asset_id");
-  const bank = Number(formData.get("bank"));
+  const bankInput = getString(formData, "bank");
+  const bank = bankInput ? Number(bankInput) : null;
   const type = Number(formData.get("type"));
 
-  if (!date || !Number.isFinite(value) || !assetId) {
-    throw new Error("Date, value, and asset are required.");
+  if (
+    !date ||
+    !Number.isFinite(value) ||
+    !Number.isFinite(quantity) ||
+    !assetId
+  ) {
+    throw new Error("Date, unit value, quantity, and asset are required.");
   }
 
-  if (!Number.isInteger(bank) || !Number.isInteger(type)) {
-    throw new Error("Bank and type must be valid select options.");
+  if (value < 0 || quantity <= 0 || costs < 0 || !Number.isFinite(costs)) {
+    throw new Error("Use valid positive values for unit value and quantity.");
+  }
+
+  if ((bank !== null && !Number.isInteger(bank)) || !Number.isInteger(type)) {
+    throw new Error("Type must be a valid select option.");
   }
 
   return {
     date,
     value,
-    bank,
+    quantity,
+    costs,
+    ...(bank === null ? {} : { bank }),
     type,
     asset_id: assetId,
   };
@@ -196,7 +211,7 @@ export async function createAssetEntry(formData: FormData) {
 
   await Promise.all([
     assertAsset(entry.asset_id),
-    assertSelectOption("bank", entry.bank),
+    entry.bank ? assertSelectOption("bank", entry.bank) : Promise.resolve(),
     assertSelectOption("asset_entry_type", entry.type),
   ]);
 
@@ -215,7 +230,7 @@ export async function updateAssetEntry(formData: FormData) {
 
   await Promise.all([
     assertAsset(entry.asset_id),
-    assertSelectOption("bank", entry.bank),
+    entry.bank ? assertSelectOption("bank", entry.bank) : Promise.resolve(),
     assertSelectOption("asset_entry_type", entry.type),
   ]);
 
