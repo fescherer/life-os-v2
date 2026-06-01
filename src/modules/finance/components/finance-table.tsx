@@ -91,10 +91,36 @@ function FinanceMobileRow({
   const bank = getSelectOption(selectOptions, "bank", entry.bank);
   const type = getSelectOption(selectOptions, "entry_type", entry.type);
 
+  function openEntry() {
+    openFinanceRowEdit(entry.id);
+  }
+
   return (
     <article
-      className="grid gap-3 p-4"
-      onDoubleClick={() => openFinanceRowEdit(entry.id)}
+      className="focus-visible:bg-muted/50 grid cursor-pointer gap-3 p-4"
+      tabIndex={0}
+      role="button"
+      aria-label="Open finance entry for editing"
+      onDoubleClick={(event) => {
+        if (
+          event.target instanceof HTMLElement &&
+          event.target.closest("button, a, input, select, textarea, [role='button']")
+        ) {
+          return;
+        }
+
+        openEntry();
+      }}
+      onKeyDown={(event) => {
+        if (event.target !== event.currentTarget) {
+          return;
+        }
+
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openEntry();
+        }
+      }}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 space-y-1">

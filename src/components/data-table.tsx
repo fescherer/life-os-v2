@@ -87,6 +87,19 @@ export function DataTable<TData, TValue>({
   const lastVisibleItem =
     totalItems > 0 ? Math.min(firstVisibleItem + visibleItems - 1, totalItems) : 0;
   const hasMobileRows = Boolean(renderMobileRow);
+  const interactiveTargetSelector =
+    "button, a, input, select, textarea, [role='button'], [tabindex]";
+
+  function shouldIgnoreRowAction(
+    target: EventTarget | null,
+    currentTarget: HTMLElement,
+  ) {
+    return (
+      target instanceof HTMLElement &&
+      target !== currentTarget &&
+      Boolean(target.closest(interactiveTargetSelector))
+    );
+  }
 
   return (
     <div>
@@ -154,19 +167,34 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    tabIndex={onRowDoubleClick ? 0 : undefined}
+                    role={onRowDoubleClick ? "button" : undefined}
+                    aria-label={
+                      onRowDoubleClick ? "Open row for editing" : undefined
+                    }
+                    className={cn(
+                      onRowDoubleClick &&
+                        "cursor-pointer focus-visible:bg-muted/50",
+                    )}
+                    onKeyDown={(event) => {
+                      if (
+                        !onRowDoubleClick ||
+                        shouldIgnoreRowAction(event.target, event.currentTarget)
+                      ) {
+                        return;
+                      }
+
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        onRowDoubleClick(row.original);
+                      }
+                    }}
                     onDoubleClick={(event) => {
                       if (!onRowDoubleClick) {
                         return;
                       }
 
-                      const target = event.target;
-
-                      if (
-                        target instanceof HTMLElement &&
-                        target.closest(
-                          "button, a, input, select, textarea, [role='button']",
-                        )
-                      ) {
+                      if (shouldIgnoreRowAction(event.target, event.currentTarget)) {
                         return;
                       }
 
